@@ -14,11 +14,17 @@ typealias SeatId = Int
 @Serializable
 data class WhisterRecord(
     val seat: SeatId,
-    /** Did this opponent declare to whist? If false, they passed. */
-    val whisted: Boolean,
-    /** Tricks this opponent took during the hand. 0 for the "neither whists / auto-win" case. */
+    /** This opponent's response to the contract: PASS / WHIST / HALF_WHIST. */
+    val choice: WhistChoice,
+    /**
+     * Tricks this opponent took during the hand. 0 for the "neither whists / auto-win"
+     * case and for the passer in a half-whist scenario (no play occurred).
+     */
     val tricks: Int = 0,
-)
+) {
+    /** True for a full whist; false for pass and half-whist. */
+    val isFullWhist: Boolean get() = choice == WhistChoice.WHIST
+}
 
 /**
  * A single recorded hand. Sealed because the input form differs by hand type.
@@ -37,9 +43,7 @@ sealed class Hand {
         val bid: Bid,
         val declarerTricks: Int,
         val opponents: List<WhisterRecord>,
-        /** 4-player only: did the dealer elect to whist for someone? Records dealer's whist activity. */
-        val dealerWhistedFor: SeatId? = null,
-        /** Optional talon honor bonuses (4-player). Whist points credited to the dealer column. */
+        /** Optional talon honor bonus (4-player only). Whist points credited to the dealer column against the declarer. */
         val talonWhistBonus: Int = 0,
     ) : Hand() {
         init {

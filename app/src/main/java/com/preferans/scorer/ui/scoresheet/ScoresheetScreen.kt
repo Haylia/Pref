@@ -18,8 +18,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -27,6 +27,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +53,7 @@ import com.preferans.scorer.domain.PlayerScore
 import com.preferans.scorer.domain.SeatId
 import com.preferans.scorer.domain.Variant
 import com.preferans.scorer.ui.GameViewModel
+import com.preferans.scorer.ui.theme.ThemeToggleButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,6 +69,8 @@ fun ScoresheetScreen(
     var menuOpen by remember { mutableStateOf(false) }
     var confirmNew by remember { mutableStateOf(false) }
     var confirmSettle by remember { mutableStateOf(false) }
+    var visualMode by remember { mutableStateOf(false) }
+    var detailsForSeat by remember { mutableStateOf<Int?>(null) }
 
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing,
@@ -74,11 +78,12 @@ fun ScoresheetScreen(
             TopAppBar(
                 title = { Text("Preferans · ${game.config.variant.displayName}") },
                 actions = {
+                    ThemeToggleButton()
                     IconButton(
                         onClick = { vm.undoLastHand() },
                         enabled = game.hands.isNotEmpty(),
                     ) {
-                        Icon(Icons.Default.Undo, contentDescription = "Undo last hand")
+                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo last hand")
                     }
                     Box {
                         TextButton(onClick = { menuOpen = true }) { Text("Menu") }
@@ -114,7 +119,28 @@ fun ScoresheetScreen(
                 .padding(horizontal = 16.dp),
         ) {
             Spacer(Modifier.height(8.dp))
-            ScoresheetTable(game)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = !visualMode,
+                    onClick = { visualMode = false },
+                    label = { Text("Table") },
+                )
+                FilterChip(
+                    selected = visualMode,
+                    onClick = { visualMode = true },
+                    label = { Text("Visual") },
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            if (visualMode) {
+                VisualScoresheet(
+                    game = game,
+                    onSeatTap = { detailsForSeat = it },
+                    onSeatLongPress = { detailsForSeat = it },
+                )
+            } else {
+                ScoresheetTable(game)
+            }
             Spacer(Modifier.height(8.dp))
             WhistMatrix(game)
             Spacer(Modifier.height(8.dp))
@@ -176,6 +202,20 @@ fun ScoresheetScreen(
             },
             title = { Text("Settle the game now?") },
             text = { Text("Computes final whist totals using the current state.") },
+        )
+    }
+
+    detailsForSeat?.let { seat ->
+        PlayerDetailsSheet(
+            game = game,
+            seat = seat,
+            onDismiss = { detailsForSeat = null },
+            onRename = { s, name -> vm.renamePlayer(s, name) },
+            onAddHandAsDeclarer = { s ->
+                vm.setPendingDeclarer(s)
+                detailsForSeat = null
+                onAddHand()
+            },
         )
     }
 }
@@ -356,7 +396,11 @@ private fun HandRow(h: Hand, config: GameConfig) {
                             append(" · ")
                             append(config.nameOf(opp.seat))
                             append(" ${opp.tricks}")
-                            if (opp.whisted) append(" (whist)")
+                            when (opp.choice) {
+                                com.preferans.scorer.domain.WhistChoice.WHIST -> append(" (whist)")
+                                com.preferans.scorer.domain.WhistChoice.HALF_WHIST -> append(" (½)")
+                                com.preferans.scorer.domain.WhistChoice.PASS -> Unit
+                            }
                         }
                     }
                     Text(tricksLine, style = MaterialTheme.typography.bodySmall)

@@ -48,16 +48,11 @@ object ScoringEngine {
     // ────────────────────────────────────────────────────────────────────────
 
     private fun scorePlayed(hand: Hand.Played, config: GameConfig): List<ScoreDelta> {
-        if (hand.bid is Bid.Misere) return scoreMisere(hand)
-
         val deltas = mutableListOf<ScoreDelta>()
-        val level = hand.bid.level
-        val v = valuePerTrick(level)
-        val threshold = whistThreshold(level)
-        val d = hand.declarerTricks
-        val whisters = hand.opponents.filter { it.whisted }
 
-        // Optional 4-player talon honors (whist bonus to the dealer column against declarer).
+        // Talon honors (4-player). Emitted regardless of bid — Misère too can have
+        // talon-honor whist bonuses (10 per seven, 20 for a seven-eight in suit).
+        // Caller passes the total via talonWhistBonus.
         if (hand.talonWhistBonus != 0) {
             deltas += ScoreDelta(
                 seat = hand.dealerSeat,
@@ -65,34 +60,53 @@ object ScoringEngine {
             )
         }
 
-        if (whisters.isEmpty()) {
-            // Neither opponent whisted — declarer auto-wins, no play.
+        if (hand.bid is Bid.Misere) {
+            val tricks = hand.declarerTricks
+            deltas += if (tricks == 0) {
+                ScoreDelta(seat = hand.declarerSeat, bullet = 10)
+            } else {
+                ScoreDelta(seat = hand.declarerSeat, mountain = 10 * tricks)
+            }
+            return deltas
+        }
+
+        val level = hand.bid.level
+        val v = valuePerTrick(level)
+        val threshold = whistThreshold(level)
+        val d = hand.declarerTricks
+
+        // Half-whist: hand ends without play; declarer credited as having made
+        // contract; half-whister gets V × (threshold/2) whist against declarer.
+        val halfWhister = hand.opponents.firstOrNull { it.choice == com.preferans.scorer.domain.WhistChoice.HALF_WHIST }
+        if (halfWhister != null) {
+            deltas += ScoreDelta(seat = hand.declarerSeat, bullet = v)
+            deltas += ScoreDelta(
+                seat = halfWhister.seat,
+                whistAgainst = mapOf(hand.declarerSeat to v * (threshold / 2)),
+            )
+            return deltas
+        }
+
+        val whisters = hand.opponents.filter { it.isFullWhist }
+
+        // Auto-win path: only for levels 6–9 when neither opponent whisted.
+        // Level 10 is always played — there is no whist option (catsatcards: "N/A").
+        if (whisters.isEmpty() && level < 10) {
             deltas += ScoreDelta(seat = hand.declarerSeat, bullet = v)
             return deltas
         }
 
-        val whistedTricks = whisters.sumOf { it.tricks }
         val whisterShares = splitThreshold(threshold, whisters.size)
 
         if (d >= level) {
             // Declarer made the contract.
             deltas += ScoreDelta(seat = hand.declarerSeat, bullet = v)
-
-            // If whisters fell short of their share, each takes mountain for the gap.
-            if (whistedTricks < threshold) {
-                whisters.forEachIndexed { i, w ->
-                    val gap = (whisterShares[i] - w.tricks).coerceAtLeast(0)
-                    if (gap > 0) {
-                        deltas += ScoreDelta(seat = w.seat, mountain = v * gap)
-                    }
-                }
-            }
         } else {
             // Declarer failed — short by (level - d) tricks.
             val short = level - d
             deltas += ScoreDelta(seat = hand.declarerSeat, mountain = v * short)
 
-            // Mirror whist: every opponent (whether they whisted or not) records V × short.
+            // Mirror whist: every opponent (whisted or not) records V × short.
             for (opp in hand.opponents) {
                 deltas += ScoreDelta(
                     seat = opp.seat,
@@ -100,35 +114,30 @@ object ScoringEngine {
                 )
             }
 
-            // Additional whist for whisters per their overtricks above their share.
-            whisters.forEachIndexed { i, w ->
-                val over = (w.tricks - whisterShares[i]).coerceAtLeast(0)
-                if (over > 0) {
+            // Whist bonus: a flat V is split among whisters. V is always even
+            // (2/4/6/8/10) so V / num_whisters is integer for 1 or 2 whisters.
+            if (whisters.isNotEmpty()) {
+                val per = v / whisters.size
+                for (w in whisters) {
                     deltas += ScoreDelta(
                         seat = w.seat,
-                        whistAgainst = mapOf(hand.declarerSeat to v * over),
+                        whistAgainst = mapOf(hand.declarerSeat to per),
                     )
-                }
-                // Edge case: in a one-whists-alone scenario, the lone whister might
-                // still be short of their share even when declarer failed (because
-                // the passing opponent absorbed the tricks). Penalize the whister
-                // for that gap as failed-whist.
-                val gap = (whisterShares[i] - w.tricks).coerceAtLeast(0)
-                if (gap > 0) {
-                    deltas += ScoreDelta(seat = w.seat, mountain = v * gap)
                 }
             }
         }
-        return deltas
-    }
 
-    private fun scoreMisere(hand: Hand.Played): List<ScoreDelta> {
-        val tricks = hand.declarerTricks
-        return if (tricks == 0) {
-            listOf(ScoreDelta(seat = hand.declarerSeat, bullet = 10))
-        } else {
-            listOf(ScoreDelta(seat = hand.declarerSeat, mountain = 10 * tricks))
+        // Failed-whist penalty: applies in both made and failed cases. Each
+        // whister who fell short of their individual share of the threshold
+        // adds V × gap mountain to themselves.
+        whisters.forEachIndexed { i, w ->
+            val gap = (whisterShares[i] - w.tricks).coerceAtLeast(0)
+            if (gap > 0) {
+                deltas += ScoreDelta(seat = w.seat, mountain = v * gap)
+            }
         }
+
+        return deltas
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -144,6 +153,59 @@ object ScoringEngine {
             }
         }
         return deltas
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // American Aid
+    // ────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Redistributes excess bullets to under-target players.
+     *
+     * For each unit of overshoot:
+     *  - 1 bullet is transferred from the overshooter to the player closest to target
+     *  - the overshooter records 10 whist against the recipient (giver's "reward")
+     *  - the recipient records 10 mountain (laggard's "penalty")
+     *
+     * Variant transforms apply: Leningradka doubles the 10/10; Rostov converts
+     * the mountain into 5-whist-per-opponent.
+     *
+     * Repeats until no one overshoots, or no recipients remain (i.e., all at
+     * or above target — game ends).
+     */
+    fun applyAmericanAid(sheet: ScoreSheet, config: GameConfig): ScoreSheet {
+        val target = config.bulletTarget
+        var current = sheet
+        var safety = 0
+        while (safety++ < 10_000) {
+            val overshooter = config.seats.firstOrNull {
+                (current.scores[it]?.bullet ?: 0) > target
+            } ?: break
+
+            // Pick the recipient furthest from target so the excess is spread
+            // across all short players rather than piled into one. Ties break
+            // by seat order (firstOrNull semantics of minByOrNull on equal keys).
+            val recipient = config.seats
+                .filter { it != overshooter && (current.scores[it]?.bullet ?: 0) < target }
+                .minByOrNull { current.scores[it]?.bullet ?: 0 }
+                ?: break // no one to give to — leave the overshoot intact, game ends
+
+            val deltas = listOf(
+                ScoreDelta(
+                    seat = overshooter,
+                    bullet = -1,
+                    whistAgainst = mapOf(recipient to 10),
+                ),
+                ScoreDelta(
+                    seat = recipient,
+                    bullet = 1,
+                    mountain = 10,
+                ),
+            )
+            val transformed = applyVariantTransform(deltas, config, config.seats)
+            current = mergeDeltas(current, transformed, config)
+        }
+        return current
     }
 
     // ────────────────────────────────────────────────────────────────────────

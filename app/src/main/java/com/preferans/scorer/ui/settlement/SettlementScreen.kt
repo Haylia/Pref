@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.preferans.scorer.scoring.ScoringEngine
 import com.preferans.scorer.ui.GameViewModel
+import com.preferans.scorer.ui.theme.ThemeToggleButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,7 +50,12 @@ fun SettlementScreen(
 
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing,
-        topBar = { TopAppBar(title = { Text("Settlement") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Settlement") },
+                actions = { ThemeToggleButton() },
+            )
+        },
     ) { inner ->
         Column(
             modifier = Modifier

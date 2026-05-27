@@ -17,8 +17,11 @@ import kotlinx.serialization.Serializable
 sealed class Bid : Comparable<Bid> {
     abstract val rankKey: Int
 
+    /** Trick level for scoring: 6/7/8/9/10. Misère is treated as 10 (10 bullet on success). */
+    abstract val level: Int
+
     @Serializable
-    data class SuitBid(val level: Int, val suit: Suit) : Bid() {
+    data class SuitBid(override val level: Int, val suit: Suit) : Bid() {
         init {
             require(level in 6..10) { "Suit bid level must be 6..10, got $level" }
         }
@@ -26,7 +29,7 @@ sealed class Bid : Comparable<Bid> {
     }
 
     @Serializable
-    data class NoTrumpBid(val level: Int) : Bid() {
+    data class NoTrumpBid(override val level: Int) : Bid() {
         init {
             require(level in 6..10) { "NT bid level must be 6..10, got $level" }
         }
@@ -35,18 +38,11 @@ sealed class Bid : Comparable<Bid> {
 
     @Serializable
     data object Misere : Bid() {
+        override val level: Int get() = 10
         override val rankKey: Int get() = baseRank(8) + 5 // between 8NT and 9S
     }
 
     override fun compareTo(other: Bid): Int = rankKey - other.rankKey
-
-    /** Trick level for scoring: 6/7/8/9/10. Misère is treated as 10 (10 bullet on success). */
-    val level: Int
-        get() = when (this) {
-            is SuitBid -> level
-            is NoTrumpBid -> level
-            Misere -> 10
-        }
 
     val displayName: String
         get() = when (this) {

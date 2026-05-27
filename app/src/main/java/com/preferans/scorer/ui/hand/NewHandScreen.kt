@@ -64,15 +64,22 @@ fun NewHandScreen(
     val activeSeats = game.activeSeats(game.nextDealerSeat)
     val handKey = game.nextHandNumber // re-seed all state when a hand is recorded
 
+    // One-shot prefill from VM (e.g., from a "Record hand as declarer" tap on the visual chart).
+    val prefilledDeclarer = remember(handKey) {
+        val s = vm.consumePendingDeclarer()
+        if (s != null && s in activeSeats) s else activeSeats.first()
+    }
+
     var isRaspasovka by remember(handKey) { mutableStateOf(false) }
-    var declarerSeat by remember(handKey) { mutableIntStateOf(activeSeats.first()) }
+    var declarerSeat by remember(handKey) { mutableIntStateOf(prefilledDeclarer) }
     var level by remember(handKey) { mutableIntStateOf(6) }
     var isMisere by remember(handKey) { mutableStateOf(false) }
     var suit by remember(handKey) { mutableStateOf<Suit?>(Suit.SPADES) }
     var autoWin by remember(handKey) { mutableStateOf(false) }
-    val whisted = remember(handKey, declarerSeat) {
-        mutableStateMapOf<SeatId, Boolean>().apply {
-            activeSeats.filter { it != declarerSeat }.forEach { put(it, false) }
+    val whistChoice = remember(handKey, declarerSeat) {
+        mutableStateMapOf<SeatId, com.preferans.scorer.domain.WhistChoice>().apply {
+            activeSeats.filter { it != declarerSeat }
+                .forEach { put(it, com.preferans.scorer.domain.WhistChoice.PASS) }
         }
     }
     val tricks = remember(handKey, declarerSeat) {
@@ -121,6 +128,13 @@ fun NewHandScreen(
                     )
                 }
             }
+
+            // Computed up-front so it's visible to both the tricks section and
+            // the submit button. False unless we're in a Played contract with at
+            // least one opponent set to HALF_WHIST.
+            val anyHalfWhist = !isRaspasovka && activeSeats
+                .filter { it != declarerSeat }
+                .any { whistChoice[it] == com.preferans.scorer.domain.WhistChoice.HALF_WHIST }
 
             if (!isRaspasovka) {
                 SectionCard(title = "Declarer") {
@@ -173,37 +187,93 @@ fun NewHandScreen(
                     }
                 }
 
+                // The "both passed → auto-win" rule only applies to 6–9 level
+                // suit/NT bids. Level 10 is always played (rules: whist N/A),
+                // and Misère has no whist concept at all.
+                val autoWinApplies = !isMisere && level < 10
+                if (!autoWinApplies && autoWin) autoWin = false
+
                 SectionCard(title = "Whist") {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Switch(
-                            checked = autoWin,
-                            onCheckedChange = { autoWin = it },
+                    if (autoWinApplies) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Switch(
+                                checked = autoWin,
+                                onCheckedChange = { autoWin = it },
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Column {
+                                Text("Both opponents passed", fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "Declarer auto-wins all 10 tricks; no play.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    } else if (isMisere) {
+                        Text(
+                            "Misère has no whist — opponents always play.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Spacer(Modifier.width(8.dp))
-                        Column {
-                            Text("Both opponents passed", fontWeight = FontWeight.SemiBold)
+                    } else {
+                        Text(
+                            "A 10-bid is always played; there is no whist option.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    // Whist choice (Pass / Whist / Half-whist) — non-misère only.
+                    if (!autoWin && !isMisere) {
+                        Spacer(Modifier.height(8.dp))
+                        val halfWhistAllowed = level == 6 || level == 7
+                        val opponents = activeSeats.filter { it != declarerSeat }
+                        opponents.forEach { opp ->
+                            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                                Text(
+                                    game.config.nameOf(opp),
+                                    style = MaterialTheme.typography.labelLarge,
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    listOf(
+                                        com.preferans.scorer.domain.WhistChoice.PASS to "Pass",
+                                        com.preferans.scorer.domain.WhistChoice.WHIST to "Whist",
+                                        com.preferans.scorer.domain.WhistChoice.HALF_WHIST to "Half-whist",
+                                    ).forEach { (choiceValue, choiceLabel) ->
+                                        val isHalf = choiceValue == com.preferans.scorer.domain.WhistChoice.HALF_WHIST
+                                        FilterChip(
+                                            selected = whistChoice[opp] == choiceValue,
+                                            onClick = {
+                                                whistChoice[opp] = choiceValue
+                                                // Mutex: half-whist requires the other opp to PASS
+                                                if (isHalf) {
+                                                    opponents.filter { it != opp }.forEach { other ->
+                                                        whistChoice[other] = com.preferans.scorer.domain.WhistChoice.PASS
+                                                    }
+                                                }
+                                            },
+                                            enabled = !isHalf || halfWhistAllowed,
+                                            label = { Text(choiceLabel) },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        if (anyHalfWhist) {
+                            Spacer(Modifier.height(4.dp))
                             Text(
-                                "Declarer auto-wins all 10 tricks; no play.",
+                                "Half-whist: hand ends without play. Declarer is credited as " +
+                                    "having made the contract; the half-whister scores " +
+                                    "V × (threshold / 2) whist points against declarer.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
-                    if (!autoWin) {
-                        Spacer(Modifier.height(8.dp))
-                        activeSeats.filter { it != declarerSeat }.forEach { opp ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(
-                                    checked = whisted[opp] ?: false,
-                                    onCheckedChange = { whisted[opp] = it },
-                                )
-                                Text("${game.config.nameOf(opp)} whisted")
-                            }
-                        }
-                    }
                 }
 
-                if (!autoWin && !isMisere) {
+                if (!autoWin && !isMisere && !anyHalfWhist) {
                     SectionCard(title = "Tricks taken") {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -290,10 +360,10 @@ fun NewHandScreen(
                 isRaspasovka = isRaspasovka,
                 isMisere = isMisere,
                 autoWin = autoWin,
+                anyHalfWhist = anyHalfWhist,
                 declarerTricks = declarerTricks,
                 opponentTricks = tricks,
                 raspasovkaTricks = raspasovkaTricks,
-                suit = suit,
             )
 
             Button(
@@ -310,26 +380,45 @@ fun NewHandScreen(
                             suit == null -> Bid.NoTrumpBid(level)
                             else -> Bid.SuitBid(level, suit!!)
                         }
-                        val opponents = activeSeats.filter { it != declarerSeat }.map { opp ->
+                        val opps = activeSeats.filter { it != declarerSeat }
+                        // For half-whist: synthesise the trick distribution so
+                        // Hand.Played.init's sum == 10 invariant holds. The engine
+                        // detects the choice and ignores the values.
+                        val halfThreshold = (10 - level) / 2
+                        val opponents = opps.map { opp ->
+                            val opponentChoice = if (autoWin || isMisere)
+                                com.preferans.scorer.domain.WhistChoice.PASS
+                            else
+                                whistChoice[opp] ?: com.preferans.scorer.domain.WhistChoice.PASS
+
+                            val opponentTricks = when {
+                                autoWin -> 0
+                                isMisere -> {
+                                    val remaining = 10 - declarerTricks
+                                    val per = remaining / opps.size
+                                    val rem = remaining % opps.size
+                                    val idx = opps.indexOf(opp)
+                                    if (idx < rem) per + 1 else per
+                                }
+                                anyHalfWhist -> when (opponentChoice) {
+                                    com.preferans.scorer.domain.WhistChoice.HALF_WHIST -> halfThreshold
+                                    else -> 0
+                                }
+                                else -> tricks[opp] ?: 0
+                            }
                             WhisterRecord(
                                 seat = opp,
-                                whisted = !autoWin && (whisted[opp] ?: false),
-                                tricks = when {
-                                    autoWin -> 0
-                                    isMisere -> {
-                                        val others = activeSeats.filter { it != declarerSeat }
-                                        val remaining = 10 - declarerTricks
-                                        // Distribute remaining evenly between misère opponents
-                                        val per = remaining / others.size
-                                        val rem = remaining % others.size
-                                        val idx = others.indexOf(opp)
-                                        if (idx < rem) per + 1 else per
-                                    }
-                                    else -> tricks[opp] ?: 0
-                                },
+                                choice = opponentChoice,
+                                tricks = opponentTricks,
                             )
                         }
-                        val effectiveDeclarerTricks = if (autoWin) 10 else declarerTricks
+                        val effectiveDeclarerTricks = when {
+                            autoWin -> 10
+                            // Half-whist: hand wasn't played. Tricks are synthesised
+                            // to satisfy the sum==10 invariant. Engine ignores them.
+                            anyHalfWhist -> 10 - halfThreshold
+                            else -> declarerTricks
+                        }
                         Hand.Played(
                             handNumber = game.nextHandNumber,
                             dealerSeat = game.nextDealerSeat,
@@ -356,14 +445,14 @@ private fun canSubmit(
     isRaspasovka: Boolean,
     isMisere: Boolean,
     autoWin: Boolean,
+    anyHalfWhist: Boolean,
     declarerTricks: Int,
     opponentTricks: Map<SeatId, Int>,
     raspasovkaTricks: Map<SeatId, Int>,
-    suit: Suit?,
 ): Boolean {
     if (isRaspasovka) return raspasovkaTricks.values.sum() == 10
     if (isMisere) return declarerTricks in 0..10
-    if (autoWin) return true
+    if (autoWin || anyHalfWhist) return true
     val sum = declarerTricks + opponentTricks.values.sum()
     return sum == 10
 }

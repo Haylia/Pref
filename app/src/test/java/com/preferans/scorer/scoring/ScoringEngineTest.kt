@@ -8,6 +8,7 @@ import com.preferans.scorer.domain.ScoreSheet
 import com.preferans.scorer.domain.SeatId
 import com.preferans.scorer.domain.Suit
 import com.preferans.scorer.domain.Variant
+import com.preferans.scorer.domain.WhistChoice
 import com.preferans.scorer.domain.WhisterRecord
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -68,8 +69,8 @@ class ScoringEngineTest {
             bid = Bid.SuitBid(6, Suit.SPADES),
             declarerTricks = 6,
             opponents = listOf(
-                WhisterRecord(seat = 1, whisted = true, tricks = 2),
-                WhisterRecord(seat = 2, whisted = true, tricks = 2),
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.WHIST, tricks = 2),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
@@ -90,8 +91,8 @@ class ScoringEngineTest {
             bid = Bid.SuitBid(6, Suit.SPADES),
             declarerTricks = 7,
             opponents = listOf(
-                WhisterRecord(seat = 1, whisted = true, tricks = 2),
-                WhisterRecord(seat = 2, whisted = true, tricks = 1),
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.WHIST, tricks = 1),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
@@ -112,8 +113,8 @@ class ScoringEngineTest {
             bid = Bid.SuitBid(7, Suit.HEARTS),
             declarerTricks = 10, // auto-win counted as full 10
             opponents = listOf(
-                WhisterRecord(seat = 0, whisted = false, tricks = 0),
-                WhisterRecord(seat = 2, whisted = false, tricks = 0),
+                WhisterRecord(seat = 0, choice = WhistChoice.PASS, tricks = 0),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 0),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
@@ -129,8 +130,8 @@ class ScoringEngineTest {
 
     // ── Sochinka: declarer fails ────────────────────────────────────────────
 
-    @Test fun sixSpades_failedBy1_bothWhisted_mirrorAndOvertricks() {
-        // 6♠: declarer takes 5, whisters take 5 combined. Threshold 4, so 1 overtrick.
+    @Test fun sixSpades_failedBy1_bothWhisted_mirrorAndFlatBonus() {
+        // 6♠: declarer takes 5, both whisters take 5 combined (3 + 2).
         val cfg = threePlayerConfig()
         val hand = Hand.Played(
             handNumber = 1,
@@ -139,24 +140,23 @@ class ScoringEngineTest {
             bid = Bid.SuitBid(6, Suit.SPADES),
             declarerTricks = 5,
             opponents = listOf(
-                WhisterRecord(seat = 1, whisted = true, tricks = 3), // share 2, +1 over
-                WhisterRecord(seat = 2, whisted = true, tricks = 2), // share 2, +0 over
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 3),
+                WhisterRecord(seat = 2, choice = WhistChoice.WHIST, tricks = 2),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
 
-        // V[6] = 2, declarer short by 1 → +2 mountain
+        // V[6] = 2, declarer short by 1 → +2 mountain.
         assertEquals(0, result.scores[0]?.bullet)
         assertEquals(2, result.scores[0]?.mountain)
-        // Mirror whist: each opponent +V*1 = 2 whist against declarer
-        // Plus overtricks for whister[1] = 1 × V = 2 more whist
-        assertEquals(2 + 2, result.scores[1]?.whistAgainst?.get(0))
-        assertEquals(2, result.scores[2]?.whistAgainst?.get(0))
+        // Mirror whist V*1 = 2 to each opponent + V (=2) split among 2 whisters = 1 each.
+        // Each whister: 2 + 1 = 3.
+        assertEquals(3, result.scores[1]?.whistAgainst?.get(0))
+        assertEquals(3, result.scores[2]?.whistAgainst?.get(0))
     }
 
-    @Test fun sevenNT_failedBy2_oneWhister_overtricks() {
-        // 7NT: declarer takes 5, opponent[1] whisted alone and took 4, opponent[2] passed and took 1.
-        // Threshold = 2 for whister alone. Whister took 4 → 2 overtricks.
+    @Test fun sevenNT_failedBy2_oneWhister_aloneBonus() {
+        // 7NT: declarer takes 5, opp[1] whisted alone and took 4, opp[2] passed and took 1.
         val cfg = threePlayerConfig()
         val hand = Hand.Played(
             handNumber = 1,
@@ -165,24 +165,22 @@ class ScoringEngineTest {
             bid = Bid.NoTrumpBid(7),
             declarerTricks = 5,
             opponents = listOf(
-                WhisterRecord(seat = 1, whisted = true, tricks = 4),
-                WhisterRecord(seat = 2, whisted = false, tricks = 1),
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 4),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 1),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
 
         // V[7]=4, declarer short by 2 → +4×2 = 8 mountain
         assertEquals(8, result.scores[0]?.mountain)
-        // Mirror whist: each opponent +V×2 = 8 whist against declarer (yes, even the passer)
-        // Whister: additional V × overtricks (4-2=2) = 8 more whist → total 16
-        assertEquals(16, result.scores[1]?.whistAgainst?.get(0))
-        // Passer just gets mirror
+        // Mirror V*2 = 8 to each opponent. Lone whister gets full V=4 bonus.
+        // Whister total: 8 + 4 = 12. Passer just gets mirror = 8.
+        assertEquals(12, result.scores[1]?.whistAgainst?.get(0))
         assertEquals(8, result.scores[2]?.whistAgainst?.get(0))
     }
 
     @Test fun eightNT_failed_oneWhister_undertricks() {
-        // 8NT: declarer takes 7 (fails by 1), opponent[1] whisted but took 0, opponent[2] passed and took 3.
-        // Whister[1] alone needed threshold = 1. Took 0 → failed whist by 1.
+        // 8NT: declarer takes 7 (fails by 1), opp[1] whisted but took 0, opp[2] passed took 3.
         val cfg = threePlayerConfig()
         val hand = Hand.Played(
             handNumber = 1,
@@ -191,19 +189,90 @@ class ScoringEngineTest {
             bid = Bid.NoTrumpBid(8),
             declarerTricks = 7,
             opponents = listOf(
-                WhisterRecord(seat = 1, whisted = true, tricks = 0),
-                WhisterRecord(seat = 2, whisted = false, tricks = 3),
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 0),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 3),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
 
         // V[8]=6, declarer short by 1 → +6 mountain
         assertEquals(6, result.scores[0]?.mountain)
-        // Mirror whist for both opponents
-        assertEquals(6, result.scores[1]?.whistAgainst?.get(0))
+        // Mirror = V*1=6 to each opp. Lone whister bonus = V=6.
+        // Whister total whist = 6 + 6 = 12. Passer = 6.
+        assertEquals(12, result.scores[1]?.whistAgainst?.get(0))
         assertEquals(6, result.scores[2]?.whistAgainst?.get(0))
-        // Whister failed their share of 1 → +V×1 = +6 mountain to themselves
+        // Whister failed their share of 1 → +V*1 = +6 mountain to themselves
         assertEquals(6, result.scores[1]?.mountain)
+    }
+
+    // ── Half-whist ──────────────────────────────────────────────────────────
+
+    @Test fun halfWhist_sixSpades_endsWithoutPlay_declarerMakes_halfWhisterScoresFour() {
+        // 6♠: opp[1] half-whisted, opp[2] passed. Hand ends; declarer credited as
+        // having made the contract. Half-whister gets V × (T/2) = 2 × 2 = 4 whist.
+        // We supply synthesized tricks (8/2/0) so Hand.Played.init is satisfied.
+        val cfg = threePlayerConfig()
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(6, Suit.SPADES),
+            declarerTricks = 8, // L + T/2 = 6 + 2 = 8
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.HALF_WHIST, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 0),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(2, result.scores[0]?.bullet) // V[6] bullet for declarer
+        assertEquals(0, result.scores[0]?.mountain)
+        assertEquals(4, result.scores[1]?.whistAgainst?.get(0))
+        // Passer: no whist credit
+        assertEquals(null, result.scores[2]?.whistAgainst?.get(0))
+        // Half-whister: no mountain (no failed-share path taken in half-whist branch)
+        assertEquals(0, result.scores[1]?.mountain)
+    }
+
+    @Test fun halfWhist_sevenHearts_halfWhisterScoresFour() {
+        // 7♥: V=4, threshold=2 → half-whister gets V × (T/2) = 4 × 1 = 4 whist.
+        // Synthesised tricks: declarer=10-1=9, half-whister=1, passer=0 (sum=10).
+        val cfg = threePlayerConfig()
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(7, Suit.HEARTS),
+            declarerTricks = 9,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.HALF_WHIST, tricks = 1),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 0),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(4, result.scores[0]?.bullet) // V[7]
+        assertEquals(4, result.scores[1]?.whistAgainst?.get(0))
+    }
+
+    @Test fun halfWhist_rostov_appliesHalving() {
+        // 6♠ half-whist in Rostov. Sochinka: half-whister gets 4 whist.
+        // Rostov halves → 4 / 2 = 2 whist.
+        val cfg = threePlayerConfig(Variant.ROSTOV)
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(6, Suit.SPADES),
+            declarerTricks = 8,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.HALF_WHIST, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 0),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+        assertEquals(2, result.scores[0]?.bullet)
+        assertEquals(2, result.scores[1]?.whistAgainst?.get(0))
     }
 
     // ── Misère ──────────────────────────────────────────────────────────────
@@ -217,8 +286,8 @@ class ScoringEngineTest {
             bid = Bid.Misere,
             declarerTricks = 0,
             opponents = listOf(
-                WhisterRecord(seat = 1, whisted = false, tricks = 5),
-                WhisterRecord(seat = 2, whisted = false, tricks = 5),
+                WhisterRecord(seat = 1, choice = WhistChoice.PASS, tricks = 5),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 5),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
@@ -236,8 +305,8 @@ class ScoringEngineTest {
             bid = Bid.Misere,
             declarerTricks = 1,
             opponents = listOf(
-                WhisterRecord(seat = 0, whisted = false, tricks = 5),
-                WhisterRecord(seat = 2, whisted = false, tricks = 4),
+                WhisterRecord(seat = 0, choice = WhistChoice.PASS, tricks = 5),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 4),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
@@ -276,17 +345,17 @@ class ScoringEngineTest {
             bid = Bid.SuitBid(6, Suit.SPADES),
             declarerTricks = 5,
             opponents = listOf(
-                WhisterRecord(seat = 1, whisted = true, tricks = 3),
-                WhisterRecord(seat = 2, whisted = true, tricks = 2),
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 3),
+                WhisterRecord(seat = 2, choice = WhistChoice.WHIST, tricks = 2),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
 
-        // Sochinka: declarer +2 mountain; whister1 +4 whist (mirror 2 + overtricks 2); whister2 +2 whist
-        // Leningradka: doubled → declarer +4 mountain; whister1 +8 whist; whister2 +4 whist
+        // Sochinka base: declarer +2 mountain; each whister +3 whist (2 mirror + 1 bonus).
+        // Leningradka doubles: declarer +4 mountain; each whister +6 whist.
         assertEquals(4, result.scores[0]?.mountain)
-        assertEquals(8, result.scores[1]?.whistAgainst?.get(0))
-        assertEquals(4, result.scores[2]?.whistAgainst?.get(0))
+        assertEquals(6, result.scores[1]?.whistAgainst?.get(0))
+        assertEquals(6, result.scores[2]?.whistAgainst?.get(0))
     }
 
     @Test fun leningradka_bulletScoredAtBaseValueDuringPlay() {
@@ -299,8 +368,8 @@ class ScoringEngineTest {
             bid = Bid.SuitBid(6, Suit.SPADES),
             declarerTricks = 10,
             opponents = listOf(
-                WhisterRecord(seat = 1, whisted = false, tricks = 0),
-                WhisterRecord(seat = 2, whisted = false, tricks = 0),
+                WhisterRecord(seat = 1, choice = WhistChoice.PASS, tricks = 0),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 0),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
@@ -311,8 +380,7 @@ class ScoringEngineTest {
     // ── Rostov ──────────────────────────────────────────────────────────────
 
     @Test fun rostov_noMountain_substitutesWhistFiveToEachOpponent() {
-        // 6♠ failed by 1 in Sochinka terms: declarer would owe 2 mountain.
-        // In Rostov: each opponent gets 5×2 = 10 whist against declarer instead.
+        // 6♠ failed by 1. Sochinka: declarer +2 mountain; each whister +3 whist.
         val cfg = threePlayerConfig(Variant.ROSTOV)
         val hand = Hand.Played(
             handNumber = 1,
@@ -321,20 +389,17 @@ class ScoringEngineTest {
             bid = Bid.SuitBid(6, Suit.SPADES),
             declarerTricks = 5,
             opponents = listOf(
-                WhisterRecord(seat = 1, whisted = true, tricks = 3),
-                WhisterRecord(seat = 2, whisted = true, tricks = 2),
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 3),
+                WhisterRecord(seat = 2, choice = WhistChoice.WHIST, tricks = 2),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
 
-        // Declarer's mountain (Sochinka 2) → each opponent gets 10 whist
-        // Plus halved normal whist:
-        //   - mirror (Sochinka 2) halved → 1 each opponent
-        //   - whister1 overtricks (Sochinka 2 over base mirror) halved → 1
-        // So whister[1] gets: 10 (from mountain subst) + 1 (mirror halved) + 1 (overtrick halved) = 12
-        // whister[2] gets: 10 (from mountain subst) + 1 (mirror halved) = 11
-        assertEquals(0, result.scores[0]?.mountain) // no mountain in Rostov
-        assertEquals(12, result.scores[1]?.whistAgainst?.get(0))
+        // Declarer mountain (2) → 5*2=10 whist for each opponent against declarer.
+        // Other whist (3 each) halved with integer division → 1 each.
+        // Per opponent: 10 (mountain subst) + 1 (halved normal) = 11.
+        assertEquals(0, result.scores[0]?.mountain) // mountain stays 0 in Rostov
+        assertEquals(11, result.scores[1]?.whistAgainst?.get(0))
         assertEquals(11, result.scores[2]?.whistAgainst?.get(0))
     }
 
@@ -348,8 +413,8 @@ class ScoringEngineTest {
             bid = Bid.Misere,
             declarerTricks = 1,
             opponents = listOf(
-                WhisterRecord(seat = 1, whisted = false, tricks = 5),
-                WhisterRecord(seat = 2, whisted = false, tricks = 4),
+                WhisterRecord(seat = 1, choice = WhistChoice.PASS, tricks = 5),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 4),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
@@ -392,24 +457,27 @@ class ScoringEngineTest {
         assertEquals(6, r.normalizedMountain[1])
         assertEquals(2, r.normalizedMountain[2])
 
-        // Each normalized * 10 / 3 to opponents.
-        // Mountain[0]=0 → 0 each
-        // Mountain[1]=6 → 6*10/3=20 each to opponents (0 and 2)
-        // Mountain[2]=2 → 2*10/3=6 each (integer div)
-        assertEquals(20, r.mountainConvertedWhist[1]?.get(0))
-        assertEquals(20, r.mountainConvertedWhist[1]?.get(2))
-        assertEquals(6, r.mountainConvertedWhist[2]?.get(0))
-        assertEquals(6, r.mountainConvertedWhist[2]?.get(1))
+        // mountainConvertedWhist[earner][target] = normMountain[target] * 10 / N.
+        // i.e., target's mountain becomes whist credited to each earner *against* target.
+        // Seat 1 has normalized mountain 6 → 60/3=20 to each opponent against seat 1.
+        assertEquals(20, r.mountainConvertedWhist[0]?.get(1))
+        assertEquals(20, r.mountainConvertedWhist[2]?.get(1))
+        // Seat 2 has normalized mountain 2 → 20/3=6 (int div) against seat 2.
+        assertEquals(6, r.mountainConvertedWhist[0]?.get(2))
+        assertEquals(6, r.mountainConvertedWhist[1]?.get(2))
+        // Seat 0 has 0 → 0 against seat 0.
+        assertEquals(0, r.mountainConvertedWhist[1]?.get(0))
+        assertEquals(0, r.mountainConvertedWhist[2]?.get(0))
 
-        // Net whist:
-        // seat 0: my whist = 10+6 + 0+0 (mountain conv from seat 0) = 16. Others against me: 4 (from 1) + 6 (from 2) + 20 (mountain from 1) + 6 (from 2) = 36. Net = 16 - 36 = -20.
-        // seat 1: my whist = 4+8 + 20+20 = 52. Others against me: 10 (from 0) + 2 (from 2) + 0 (mountain from 0) + 6 (mountain from 2) = 18. Net = 52 - 18 = 34.
-        // seat 2: my whist = 6+2 + 6+6 = 20. Others against me: 6 (from 0) + 8 (from 1) + 0 + 20 = 34. Net = 20 - 34 = -14.
-        // Sanity: net sums to 0: -20 + 34 + -14 = 0. ✓
-        assertEquals(-20, r.netWhist[0])
-        assertEquals(34, r.netWhist[1])
-        assertEquals(-14, r.netWhist[2])
-        assertEquals(1, r.winner)
+        // Net whist = (my normal whist + my mountain-conv whist) − (others against me, both kinds).
+        // seat 0: (10+6 + 20+6) − (4+6 + 0+0) = 42 − 10 = 32
+        // seat 1: (4+8  + 0+6)  − (10+2 + 20+20) = 18 − 52 = −34
+        // seat 2: (6+2  + 0+20) − (6+8  + 6+6)  = 28 − 26 = 2
+        // Sanity: 32 + (−34) + 2 = 0 ✓
+        assertEquals(32, r.netWhist[0])
+        assertEquals(-34, r.netWhist[1])
+        assertEquals(2, r.netWhist[2])
+        assertEquals(0, r.winner)
     }
 
     @Test fun settle_leningradkaDoublesBullets() {
@@ -430,8 +498,7 @@ class ScoringEngineTest {
     // ── Edge: lone whister fails while declarer also fails ──────────────────
 
     @Test fun sixSpades_failed_oneWhister_whisterUndershot_bothPenalized() {
-        // 6♠: declarer takes 5 (fail by 1). Opp[1] whisted alone, took 2.
-        // Opp[2] passed and took 3. Whister[1] alone needed share=4, took 2 → gap=2.
+        // 6♠: declarer 5 (fail by 1). Opp[1] whisted alone, took 2. Opp[2] passed, took 3.
         val cfg = threePlayerConfig()
         val hand = Hand.Played(
             handNumber = 1,
@@ -440,19 +507,108 @@ class ScoringEngineTest {
             bid = Bid.SuitBid(6, Suit.SPADES),
             declarerTricks = 5,
             opponents = listOf(
-                WhisterRecord(seat = 1, whisted = true, tricks = 2),
-                WhisterRecord(seat = 2, whisted = false, tricks = 3),
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 3),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
 
-        // V[6]=2, short=1 → declarer +2 mountain
+        // V[6]=2, short=1 → declarer +2 mountain.
         assertEquals(2, result.scores[0]?.mountain)
-        // Mirror: each opponent +V*1 = 2 whist against declarer (literal "each opponent")
-        assertEquals(2, result.scores[1]?.whistAgainst?.get(0))
+        // Mirror V*1=2 to each opp. Lone whister gets full V=2 bonus.
+        // Whister: 2 + 2 = 4 whist. Passer: just mirror = 2.
+        assertEquals(4, result.scores[1]?.whistAgainst?.get(0))
         assertEquals(2, result.scores[2]?.whistAgainst?.get(0))
-        // Lone whister took 2 vs share 4 → gap 2 → +V*2 = +4 mountain
+        // Lone whister took 2 vs share 4 → gap 2 → +V*2 = +4 mountain.
         assertEquals(4, result.scores[1]?.mountain)
+    }
+
+    // ── Level 10 is always played (no auto-win) ─────────────────────────────
+
+    @Test fun level10_noWhisters_isStillPlayed_notAutoWon() {
+        // 10♠: declarer takes 8 — fails by 2. With no whisters, prior code would have
+        // treated this as auto-win (+10 bullet). Now it must be played as failure.
+        val cfg = threePlayerConfig()
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(10, Suit.SPADES),
+            declarerTricks = 8,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.PASS, tricks = 1),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 1),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        // V[10]=10, short=2 → declarer +20 mountain.
+        assertEquals(0, result.scores[0]?.bullet)
+        assertEquals(20, result.scores[0]?.mountain)
+        // Mirror whist V*2=20 to each opp; no whisters → no bonus.
+        assertEquals(20, result.scores[1]?.whistAgainst?.get(0))
+        assertEquals(20, result.scores[2]?.whistAgainst?.get(0))
+    }
+
+    @Test fun level10_madeWithFullTricks_bulletEarned() {
+        val cfg = threePlayerConfig()
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(10, Suit.SPADES),
+            declarerTricks = 10,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.PASS, tricks = 0),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 0),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+        assertEquals(10, result.scores[0]?.bullet)
+        assertEquals(0, result.scores[0]?.mountain)
+    }
+
+    // ── American Aid ────────────────────────────────────────────────────────
+
+    @Test fun americanAid_distributesOvershootAndAppliesWhistMountain() {
+        // Construct a sheet where seat 0 overshoots by 2; seat 1 and seat 2 are 2 below target.
+        val cfg = threePlayerConfig().copy(bulletTarget = 10)
+        val initial = ScoreSheet(
+            scores = mapOf(
+                0 to com.preferans.scorer.domain.PlayerScore(seat = 0, bullet = 12),
+                1 to com.preferans.scorer.domain.PlayerScore(seat = 1, bullet = 8),
+                2 to com.preferans.scorer.domain.PlayerScore(seat = 2, bullet = 8),
+            )
+        )
+        val out = ScoringEngine.applyAmericanAid(initial, cfg)
+
+        // Excess of 2 → one bullet to each of seats 1 and 2 (spread to neediest first;
+        // ties break by seat order, then seat 2 has lower bullets after seat 1 receives).
+        assertEquals(10, out.scores[0]?.bullet)
+        assertEquals(9, out.scores[1]?.bullet)
+        assertEquals(9, out.scores[2]?.bullet)
+        // Giver (seat 0): +10 whist against each recipient (10 per bullet transferred).
+        assertEquals(10, out.scores[0]?.whistAgainst?.get(1))
+        assertEquals(10, out.scores[0]?.whistAgainst?.get(2))
+        // Recipients: +10 mountain each.
+        assertEquals(10, out.scores[1]?.mountain)
+        assertEquals(10, out.scores[2]?.mountain)
+    }
+
+    @Test fun americanAid_noOp_whenNoOneOvershoots() {
+        val cfg = threePlayerConfig()
+        val initial = ScoreSheet(
+            scores = mapOf(
+                0 to com.preferans.scorer.domain.PlayerScore(seat = 0, bullet = 5),
+                1 to com.preferans.scorer.domain.PlayerScore(seat = 1, bullet = 7),
+                2 to com.preferans.scorer.domain.PlayerScore(seat = 2, bullet = 6),
+            )
+        )
+        val out = ScoringEngine.applyAmericanAid(initial, cfg)
+        assertEquals(5, out.scores[0]?.bullet)
+        assertEquals(7, out.scores[1]?.bullet)
+        assertEquals(6, out.scores[2]?.bullet)
+        assertEquals(0, out.scores[0]?.mountain)
     }
 
     // ── 4-player Rostov: dealer must not leak ──────────────────────────────
@@ -470,8 +626,8 @@ class ScoringEngineTest {
             bid = Bid.SuitBid(6, Suit.SPADES),
             declarerTricks = 5,
             opponents = listOf(
-                WhisterRecord(seat = 2, whisted = true, tricks = 3),
-                WhisterRecord(seat = 3, whisted = true, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.WHIST, tricks = 3),
+                WhisterRecord(seat = 3, choice = WhistChoice.WHIST, tricks = 2),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
@@ -498,8 +654,8 @@ class ScoringEngineTest {
             bid = Bid.SuitBid(6, Suit.SPADES),
             declarerTricks = 6,
             opponents = listOf(
-                WhisterRecord(seat = 2, whisted = true, tricks = 2),
-                WhisterRecord(seat = 3, whisted = true, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.WHIST, tricks = 2),
+                WhisterRecord(seat = 3, choice = WhistChoice.WHIST, tricks = 2),
             ),
         )
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
@@ -520,8 +676,8 @@ class ScoringEngineTest {
             bid = Bid.SuitBid(6, Suit.SPADES),
             declarerTricks = 6,
             opponents = listOf(
-                WhisterRecord(seat = 2, whisted = true, tricks = 2),
-                WhisterRecord(seat = 3, whisted = true, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.WHIST, tricks = 2),
+                WhisterRecord(seat = 3, choice = WhistChoice.WHIST, tricks = 2),
             ),
             talonWhistBonus = 3, // e.g., two aces in talon
         )

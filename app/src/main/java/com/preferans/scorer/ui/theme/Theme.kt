@@ -45,7 +45,7 @@ private val LightColors = lightColorScheme(
 @Composable
 fun PreferansTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // disable Material You dynamic theming so light/dark toggle is predictable
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

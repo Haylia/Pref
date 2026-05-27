@@ -14,6 +14,15 @@ class GameViewModel(private val repo: GameRepository) : ViewModel() {
     val state: StateFlow<GameState?> = repo.state
     val loaded: StateFlow<Boolean> = repo.loaded
 
+    /** One-shot prefill: NewHandScreen consumes this as the initial declarer. */
+    private var pendingDeclarerSeat: Int? = null
+    fun setPendingDeclarer(seat: Int?) { pendingDeclarerSeat = seat }
+    fun consumePendingDeclarer(): Int? {
+        val v = pendingDeclarerSeat
+        pendingDeclarerSeat = null
+        return v
+    }
+
     fun startNewGame(config: GameConfig, firstDealerSeat: Int) =
         repo.startNewGame(config, firstDealerSeat)
 

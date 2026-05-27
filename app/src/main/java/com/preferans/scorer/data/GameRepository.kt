@@ -1,10 +1,9 @@
 package com.preferans.scorer.data
 
 import android.content.Context
-import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import com.preferans.scorer.domain.GameConfig
 import com.preferans.scorer.domain.GameState
 import com.preferans.scorer.domain.GameStatus
@@ -22,8 +21,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
-
-private val Context.dataStore by preferencesDataStore(name = "preferans_game")
 
 class GameRepository(private val context: Context) {
 
@@ -46,21 +43,47 @@ class GameRepository(private val context: Context) {
 
     init {
         scope.launch {
-            val stored = context.dataStore.data.map { it[key] }.first()
-            _state.value = stored?.let { runCatching { json.decodeFromString<GameState>(it) }.getOrNull() }
-            _loaded.value = true
+            try {
+                // Read from the current DataStore first.
+                var raw = context.appDataStore.data.map { it[key] }.first()
+
+                // Fallback: legacy DataStore from older builds. One-shot migration.
+                if (raw == null) {
+                    val legacy = runCatching {
+                        context.legacyGameDataStore.data.map { it[key] }.first()
+                    }.getOrNull()
+                    if (legacy != null) {
+                        raw = legacy
+                        // Copy into the new store so future reads skip the legacy path.
+                        runCatching {
+                            context.appDataStore.edit { it[key] = legacy }
+                        }
+                    }
+                }
+
+                _state.value = raw?.let {
+                    runCatching { json.decodeFromString<GameState>(it) }.getOrNull()
+                }
+            } catch (t: Throwable) {
+                android.util.Log.w("GameRepository", "Failed to load saved game", t)
+                _state.value = null
+            } finally {
+                _loaded.value = true
+            }
         }
     }
 
-    private fun persist(newState: GameState?) {
+    /**
+     * Persists state to memory and disk. Suspends until the DataStore write
+     * completes so callers holding the write mutex can serialise updates.
+     */
+    private suspend fun persist(newState: GameState?) {
         _state.value = newState
-        scope.launch {
-            context.dataStore.edit { prefs: Preferences.MutablePreferences ->
-                if (newState == null) {
-                    prefs.remove(key)
-                } else {
-                    prefs[key] = json.encodeToString(GameState.serializer(), newState)
-                }
+        context.appDataStore.edit { prefs: MutablePreferences ->
+            if (newState == null) {
+                prefs.remove(key)
+            } else {
+                prefs[key] = json.encodeToString(GameState.serializer(), newState)
             }
         }
     }
@@ -89,15 +112,16 @@ class GameRepository(private val context: Context) {
 
     fun recordHand(hand: Hand) = mutate { current ->
         if (current == null) return@mutate null
-        val newSheet = ScoringEngine.applyHand(current.sheet, hand, current.config)
+        val afterHand = ScoringEngine.applyHand(current.sheet, hand, current.config)
+        val afterAid = ScoringEngine.applyAmericanAid(afterHand, current.config)
         val newHands = current.hands + hand
         val nextDealer = current.rotateDealer()
         val allReached = current.config.seats.all { seat ->
-            (newSheet.scores[seat]?.bullet ?: 0) >= current.config.bulletTarget
+            (afterAid.scores[seat]?.bullet ?: 0) >= current.config.bulletTarget
         }
         val status = if (allReached) GameStatus.COMPLETED else GameStatus.ACTIVE
         current.copy(
-            sheet = newSheet,
+            sheet = afterAid,
             hands = newHands,
             nextDealerSeat = nextDealer,
             status = status,
@@ -110,6 +134,7 @@ class GameRepository(private val context: Context) {
         var sheet = ScoreSheet.empty(current.config.seats)
         for (h in withoutLast) {
             sheet = ScoringEngine.applyHand(sheet, h, current.config)
+            sheet = ScoringEngine.applyAmericanAid(sheet, current.config)
         }
         val idx = current.config.seats.indexOf(current.nextDealerSeat)
         val prevDealer = current.config.seats[

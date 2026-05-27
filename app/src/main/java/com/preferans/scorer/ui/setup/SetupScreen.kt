@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import com.preferans.scorer.domain.GameConfig
 import com.preferans.scorer.domain.Player
 import com.preferans.scorer.domain.Variant
+import com.preferans.scorer.ui.theme.ThemeToggleButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +60,10 @@ fun SetupScreen(onStart: (GameConfig, firstDealerSeat: Int) -> Unit) {
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
-            TopAppBar(title = { Text("New Preferans Game") })
+            TopAppBar(
+                title = { Text("New Preferans Game") },
+                actions = { ThemeToggleButton() },
+            )
         },
     ) { inner ->
         Column(
