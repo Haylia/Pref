@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Преферанс</string>
+
+    <!-- Общее -->
+    <string name="action_cancel">Отмена</string>
+    <string name="action_save">Сохранить</string>
+
+    <!-- Настройка игры -->
+    <string name="setup_title">Новая игра в Преферанс</string>
+    <string name="section_variant">Вариант</string>
+    <string name="section_players">Игроки</string>
+    <string name="players_3">3 игрока</string>
+    <string name="players_4">4 игрока</string>
+    <string name="seat_fmt">Место %1$d</string>
+    <string name="section_bullet_target">Размер пули</string>
+    <string name="bullet_custom">Другое</string>
+    <string name="section_first_dealer">Первая сдача</string>
+    <string name="action_start_game">Начать игру</string>
+    <string name="player_default_fmt">Игрок %1$d</string>
+
+    <!-- Варианты -->
+    <string name="variant_sochinka">Сочинка</string>
+    <string name="variant_sochinka_desc">Стандартный подсчёт. Базовые значения очков.</string>
+    <string name="variant_leningradka">Ленинградка</string>
+    <string name="variant_leningradka_desc">Гора и вист удваиваются; пуля удваивается при подсчёте итога.</string>
+    <string name="variant_rostov">Ростов</string>
+    <string name="variant_rostov_desc">Без горы — каждая единица горы превращается в 5 виста каждому сопернику. Остальной вист делится пополам.</string>
+
+    <!-- Главный экран -->
+    <string name="scoresheet_title_fmt">Преферанс · %1$s</string>
+    <string name="cd_undo_last_hand">Отменить последнюю раздачу</string>
+    <string name="menu">Меню</string>
+    <string name="menu_settle_now">Подвести итог</string>
+    <string name="menu_new_game">Новая игра</string>
+    <string name="fab_new_hand">Новая раздача</string>
+    <string name="view_table">Таблица</string>
+    <string name="view_visual">Схема</string>
+    <string name="col_pulja_fmt">Пуля / %1$d</string>
+    <string name="col_gora">Гора</string>
+    <string name="col_whist_total">Вист (всего)</string>
+    <string name="whist_matrix_title">Вист (строка против столбца)</string>
+    <string name="next_dealer_fmt">Сдаёт: %1$s  ·  Раздача №%2$d</string>
+    <string name="hand_history">История раздач</string>
+    <string name="no_hands_yet">Раздач пока нет. Нажмите «Новая раздача», чтобы начать.</string>
+    <string name="confirm_new_game_title">Начать новую игру?</string>
+    <string name="confirm_new_game_text">Текущая игра и её протокол будут удалены.</string>
+    <string name="confirm_settle_title">Подвести итог сейчас?</string>
+    <string name="confirm_settle_text">Итоговый вист будет рассчитан по текущему состоянию.</string>
+    <string name="action_settle">Подвести итог</string>
+    <string name="tricks_prefix">Взятки: </string>
+    <string name="declarer_by_fmt">играет %1$s</string>
+    <string name="raspasovka">Распасовка</string>
+    <string name="whist_suffix_full">(вист)</string>
+    <string name="whist_suffix_half">(½)</string>
+
+    <!-- Ввод раздачи -->
+    <string name="new_hand_title_fmt">Раздача · №%1$d</string>
+    <string name="section_hand_type">Тип раздачи</string>
+    <string name="hand_played_contract">Сыгранная игра</string>
+    <string name="hand_all_passed">Все спасовали (Распасовка)</string>
+    <string name="section_declarer">Разыгрывающий</string>
+    <string name="section_bid">Заказ</string>
+    <string name="bid_level">Уровень</string>
+    <string name="bid_trump">Козырь</string>
+    <string name="bid_misere">Мизер</string>
+    <string name="bid_nt">БК</string>
+    <string name="section_whist">Вист</string>
+    <string name="whist_pass">Пас</string>
+    <string name="whist_full">Вист</string>
+    <string name="whist_half">Полувист</string>
+    <string name="both_passed_title">Оба соперника спасовали</string>
+    <string name="both_passed_desc">Разыгрывающий получает все 10 взяток автоматически; раздача не играется.</string>
+    <string name="misere_no_whist">У мизера нет виста — соперники всегда играют.</string>
+    <string name="ten_no_whist">Десятерная всегда играется; виста не бывает.</string>
+    <string name="half_whist_desc">Полувист: раздача не играется. Разыгрывающий получает игру как выполненную; полувистующий получает V × (порог / 2) виста против разыгрывающего.</string>
+    <string name="section_tricks_taken">Взятки</string>
+    <string name="declarer_paren">(разыгрывающий)</string>
+    <string name="sum_of_ten_fmt">Сумма: %1$d / 10</string>
+    <string name="declarer_tricks_taken">Взятки разыгрывающего</string>
+    <string name="misere_succeeded">Мизер удался — +10 в пулю.</string>
+    <string name="misere_failed_fmt">Мизер не удался — +%1$d в гору.</string>
+    <string name="section_talon">Талон (бонус сдающего)</string>
+    <string name="talon_desc">Очки виста в столбец сдающего. 0, если нет.</string>
+    <string name="dealer_fmt">Сдающий: %1$s</string>
+    <string name="section_tricks_raspasovka">Взятки (Распасовка)</string>
+    <string name="action_record_hand">Записать раздачу</string>
+
+    <!-- Карточка игрока -->
+    <string name="name_label">Имя</string>
+    <string name="cd_save_name">Сохранить имя</string>
+    <string name="stat_pulja">Пуля</string>
+    <string name="stat_gora">Гора</string>
+    <string name="stat_whist">Вист</string>
+    <string name="record_hand_as_fmt">Записать раздачу: %1$s — разыгрывающий</string>
+    <string name="hands_involving_fmt">Раздачи с участием игрока (%1$d)</string>
+    <string name="no_hands_for_player">Раздач нет.</string>
+    <string name="role_declarer_fmt">разыгрывал · %1$d вз.</string>
+    <string name="role_other_fmt">%1$s · %2$d вз.</string>
+    <string name="role_whisted">вистовал</string>
+    <string name="role_half_whisted">полувист</string>
+    <string name="role_passed">пас</string>
+    <string name="hand_summary_played_fmt">#%1$d  %2$s играет %3$s  ·  %4$s</string>
+    <string name="hand_summary_raspasovka_fmt">#%1$d  Распасовка  ·  %2$d вз.</string>
+
+    <!-- Итог -->
+    <string name="settlement_title">Итог</string>
+    <string name="settlement_winner">Победитель</string>
+    <string name="settlement_net_whist_fmt">Чистый вист: %1$d</string>
+    <string name="settlement_final_scores">Итоговые баллы</string>
+    <string name="col_player">Игрок</string>
+    <string name="col_bullets">Пуля</string>
+    <string name="col_mtn_norm">Гора (норм.)</string>
+    <string name="col_net_whist">Чистый вист</string>
+    <string name="settle_explain_title">Как считается чистый вист</string>
+    <string name="settle_explain_text">1. Нормализация: у игрока с минимальной горой она становится 0; у остальных вычитается то же число.\n2. Преобразование: нормализованная гора × 10 / количество игроков записывается в вист каждого соперника.\n3. Чистый вист = (вист, набранный игроком) − (вист, набранный против него).</string>
+    <string name="action_start_new_game">Начать новую игру</string>
+
+    <!-- Масти -->
+    <string name="suit_spades">Пики</string>
+    <string name="suit_clubs">Трефы</string>
+    <string name="suit_diamonds">Бубны</string>
+    <string name="suit_hearts">Червы</string>
+
+    <!-- Тема -->
+    <string name="theme_system">Тема: системная</string>
+    <string name="theme_light">Тема: светлая</string>
+    <string name="theme_dark">Тема: тёмная</string>
+
+    <!-- Язык -->
+    <string name="lang_system">Язык: системный</string>
+    <string name="lang_english">Язык: английский</string>
+    <string name="lang_russian">Язык: русский</string>
+
+    <!-- Подписи на схеме -->
+    <string name="visual_pulja_fmt">Пуля %1$d/%2$d</string>
+    <string name="visual_gora_fmt">Гора %1$d</string>
+    <string name="visual_whist_fmt">Вист %1$d</string>
+</resources>

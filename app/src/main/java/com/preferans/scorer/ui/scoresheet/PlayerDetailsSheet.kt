@@ -34,11 +34,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.preferans.scorer.R
 import com.preferans.scorer.domain.Bid
 import com.preferans.scorer.domain.GameConfig
 import com.preferans.scorer.domain.GameState
 import com.preferans.scorer.domain.Hand
 import com.preferans.scorer.domain.SeatId
+import com.preferans.scorer.ui.localizedDisplayName
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +75,7 @@ fun PlayerDetailsSheet(
                 OutlinedTextField(
                     value = editedName,
                     onValueChange = { editedName = it },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.name_label)) },
                     singleLine = true,
                     modifier = Modifier.weight(1f),
                 )
@@ -83,7 +86,10 @@ fun PlayerDetailsSheet(
                     },
                     enabled = nameDirty,
                 ) {
-                    Icon(Icons.Default.Check, contentDescription = "Save name")
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = stringResource(R.string.cd_save_name),
+                    )
                 }
             }
 
@@ -91,9 +97,23 @@ fun PlayerDetailsSheet(
 
             // Stats summary cards
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatCard("Pulja", "${score?.bullet ?: 0}", subtitle = "/ ${game.config.bulletTarget}", modifier = Modifier.weight(1f))
-                StatCard("Gora", "${score?.mountain ?: 0}", color = MaterialTheme.colorScheme.error, modifier = Modifier.weight(1f))
-                StatCard("Whist", "${score?.totalWhist() ?: 0}", modifier = Modifier.weight(1f))
+                StatCard(
+                    stringResource(R.string.stat_pulja),
+                    "${score?.bullet ?: 0}",
+                    subtitle = "/ ${game.config.bulletTarget}",
+                    modifier = Modifier.weight(1f),
+                )
+                StatCard(
+                    stringResource(R.string.stat_gora),
+                    "${score?.mountain ?: 0}",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.weight(1f),
+                )
+                StatCard(
+                    stringResource(R.string.stat_whist),
+                    "${score?.totalWhist() ?: 0}",
+                    modifier = Modifier.weight(1f),
+                )
             }
 
             Spacer(Modifier.height(16.dp))
@@ -109,21 +129,26 @@ fun PlayerDetailsSheet(
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Record hand with ${editedName.ifBlank { originalName }} as declarer")
+                Text(
+                    stringResource(
+                        R.string.record_hand_as_fmt,
+                        editedName.ifBlank { originalName },
+                    )
+                )
             }
 
             Spacer(Modifier.height(16.dp))
 
             // Hand history filtered to this player
             Text(
-                "Hands involving this player (${playerHands.size})",
+                stringResource(R.string.hands_involving_fmt, playerHands.size),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(Modifier.height(6.dp))
             if (playerHands.isEmpty()) {
                 Text(
-                    "No hands yet.",
+                    stringResource(R.string.no_hands_for_player),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -184,23 +209,31 @@ private fun StatCard(
 private fun HandSummaryLine(h: Hand, seat: SeatId, config: GameConfig) {
     val summary = when (h) {
         is Hand.Played -> {
-            val role = when {
-                h.declarerSeat == seat -> "declarer · ${h.declarerTricks}t"
-                else -> {
-                    val opp = h.opponents.firstOrNull { it.seat == seat }
-                    val role = when (opp?.choice) {
-                        com.preferans.scorer.domain.WhistChoice.WHIST -> "whisted"
-                        com.preferans.scorer.domain.WhistChoice.HALF_WHIST -> "half-whist"
-                        com.preferans.scorer.domain.WhistChoice.PASS, null -> "passed"
-                    }
-                    "$role · ${opp?.tricks ?: 0}t"
+            val role = if (h.declarerSeat == seat) {
+                stringResource(R.string.role_declarer_fmt, h.declarerTricks)
+            } else {
+                val opp = h.opponents.firstOrNull { it.seat == seat }
+                val roleWord = when (opp?.choice) {
+                    com.preferans.scorer.domain.WhistChoice.WHIST -> stringResource(R.string.role_whisted)
+                    com.preferans.scorer.domain.WhistChoice.HALF_WHIST -> stringResource(R.string.role_half_whisted)
+                    com.preferans.scorer.domain.WhistChoice.PASS, null -> stringResource(R.string.role_passed)
                 }
+                stringResource(R.string.role_other_fmt, roleWord, opp?.tricks ?: 0)
             }
-            "#${h.handNumber}  ${h.bid.displayName} by ${config.nameOf(h.declarerSeat)}  ·  $role"
+            stringResource(
+                R.string.hand_summary_played_fmt,
+                h.handNumber,
+                h.bid.localizedDisplayName(),
+                config.nameOf(h.declarerSeat),
+                role,
+            )
         }
         is Hand.Raspasovka -> {
-            val tricks = h.tricksBySeat[seat] ?: 0
-            "#${h.handNumber}  Raspasovka  ·  ${tricks}t"
+            stringResource(
+                R.string.hand_summary_raspasovka_fmt,
+                h.handNumber,
+                h.tricksBySeat[seat] ?: 0,
+            )
         }
     }
     Text(summary, style = MaterialTheme.typography.bodySmall)

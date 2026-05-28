@@ -52,7 +52,12 @@ import com.preferans.scorer.domain.Hand
 import com.preferans.scorer.domain.PlayerScore
 import com.preferans.scorer.domain.SeatId
 import com.preferans.scorer.domain.Variant
+import androidx.compose.ui.res.stringResource
+import com.preferans.scorer.R
 import com.preferans.scorer.ui.GameViewModel
+import com.preferans.scorer.ui.localizedDisplayName
+import com.preferans.scorer.ui.localizedName
+import com.preferans.scorer.ui.theme.LanguageToggleButton
 import com.preferans.scorer.ui.theme.ThemeToggleButton
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,27 +81,40 @@ fun ScoresheetScreen(
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             TopAppBar(
-                title = { Text("Preferans · ${game.config.variant.displayName}") },
+                title = {
+                    Text(
+                        stringResource(
+                            R.string.scoresheet_title_fmt,
+                            game.config.variant.localizedName(),
+                        )
+                    )
+                },
                 actions = {
+                    LanguageToggleButton()
                     ThemeToggleButton()
                     IconButton(
                         onClick = { vm.undoLastHand() },
                         enabled = game.hands.isNotEmpty(),
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo last hand")
+                        Icon(
+                            Icons.AutoMirrored.Filled.Undo,
+                            contentDescription = stringResource(R.string.cd_undo_last_hand),
+                        )
                     }
                     Box {
-                        TextButton(onClick = { menuOpen = true }) { Text("Menu") }
+                        TextButton(onClick = { menuOpen = true }) {
+                            Text(stringResource(R.string.menu))
+                        }
                         DropdownMenu(
                             expanded = menuOpen,
                             onDismissRequest = { menuOpen = false },
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Settle now") },
+                                text = { Text(stringResource(R.string.menu_settle_now)) },
                                 onClick = { menuOpen = false; confirmSettle = true },
                             )
                             DropdownMenuItem(
-                                text = { Text("New game") },
+                                text = { Text(stringResource(R.string.menu_new_game)) },
                                 onClick = { menuOpen = false; confirmNew = true },
                             )
                         }
@@ -108,7 +126,7 @@ fun ScoresheetScreen(
             ExtendedFloatingActionButton(
                 onClick = onAddHand,
                 icon = { Icon(Icons.Default.Add, null) },
-                text = { Text("New hand") },
+                text = { Text(stringResource(R.string.fab_new_hand)) },
             )
         },
     ) { inner ->
@@ -123,12 +141,12 @@ fun ScoresheetScreen(
                 FilterChip(
                     selected = !visualMode,
                     onClick = { visualMode = false },
-                    label = { Text("Table") },
+                    label = { Text(stringResource(R.string.view_table)) },
                 )
                 FilterChip(
                     selected = visualMode,
                     onClick = { visualMode = true },
-                    label = { Text("Visual") },
+                    label = { Text(stringResource(R.string.view_visual)) },
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -145,20 +163,24 @@ fun ScoresheetScreen(
             WhistMatrix(game)
             Spacer(Modifier.height(8.dp))
             Text(
-                "Next dealer: ${game.config.nameOf(game.nextDealerSeat)}  ·  Hand #${game.nextHandNumber}",
+                stringResource(
+                    R.string.next_dealer_fmt,
+                    game.config.nameOf(game.nextDealerSeat),
+                    game.nextHandNumber,
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Hand history",
+                stringResource(R.string.hand_history),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
             )
             if (game.hands.isEmpty()) {
                 Text(
-                    "No hands recorded yet. Tap “New hand” to start.",
+                    stringResource(R.string.no_hands_yet),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -181,13 +203,17 @@ fun ScoresheetScreen(
         AlertDialog(
             onDismissRequest = { confirmNew = false },
             confirmButton = {
-                TextButton(onClick = { confirmNew = false; onNewGame() }) { Text("New game") }
+                TextButton(onClick = { confirmNew = false; onNewGame() }) {
+                    Text(stringResource(R.string.menu_new_game))
+                }
             },
             dismissButton = {
-                TextButton(onClick = { confirmNew = false }) { Text("Cancel") }
+                TextButton(onClick = { confirmNew = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             },
-            title = { Text("Start a new game?") },
-            text = { Text("This discards the current game and its scoresheet.") },
+            title = { Text(stringResource(R.string.confirm_new_game_title)) },
+            text = { Text(stringResource(R.string.confirm_new_game_text)) },
         )
     }
 
@@ -195,13 +221,17 @@ fun ScoresheetScreen(
         AlertDialog(
             onDismissRequest = { confirmSettle = false },
             confirmButton = {
-                TextButton(onClick = { confirmSettle = false; onSettle() }) { Text("Settle") }
+                TextButton(onClick = { confirmSettle = false; onSettle() }) {
+                    Text(stringResource(R.string.action_settle))
+                }
             },
             dismissButton = {
-                TextButton(onClick = { confirmSettle = false }) { Text("Cancel") }
+                TextButton(onClick = { confirmSettle = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             },
-            title = { Text("Settle the game now?") },
-            text = { Text("Computes final whist totals using the current state.") },
+            title = { Text(stringResource(R.string.confirm_settle_title)) },
+            text = { Text(stringResource(R.string.confirm_settle_text)) },
         )
     }
 
@@ -236,11 +266,14 @@ private fun ScoresheetTable(game: GameState) {
                 seats.forEach { s -> CellHeader(game.config.nameOf(s), weight = 1f) }
             }
             HRule()
-            ScoreRow("Pulja / ${game.config.bulletTarget}", seats, game) { it.bullet.toString() }
+            ScoreRow(
+                stringResource(R.string.col_pulja_fmt, game.config.bulletTarget),
+                seats, game,
+            ) { it.bullet.toString() }
             if (game.config.variant != Variant.ROSTOV) {
-                ScoreRow("Gora", seats, game) { it.mountain.toString() }
+                ScoreRow(stringResource(R.string.col_gora), seats, game) { it.mountain.toString() }
             }
-            ScoreRow("Whist (total)", seats, game) { it.totalWhist().toString() }
+            ScoreRow(stringResource(R.string.col_whist_total), seats, game) { it.totalWhist().toString() }
         }
     }
 }
@@ -273,7 +306,7 @@ private fun WhistMatrix(game: GameState) {
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                "Whist (row scores against column)",
+                stringResource(R.string.whist_matrix_title),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -370,6 +403,10 @@ private fun HandRow(h: Hand, config: GameConfig) {
         Column(modifier = Modifier.padding(12.dp)) {
             when (h) {
                 is Hand.Played -> {
+                    val whistSuffixFull = stringResource(R.string.whist_suffix_full)
+                    val whistSuffixHalf = stringResource(R.string.whist_suffix_half)
+                    val tricksPrefix = stringResource(R.string.tricks_prefix)
+                    val declarerByFmt = stringResource(R.string.declarer_by_fmt, config.nameOf(h.declarerSeat))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "#${h.handNumber}",
@@ -377,19 +414,19 @@ private fun HandRow(h: Hand, config: GameConfig) {
                             modifier = Modifier.width(36.dp),
                         )
                         Text(
-                            h.bid.displayName,
+                            h.bid.localizedDisplayName(),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "by ${config.nameOf(h.declarerSeat)}",
+                            declarerByFmt,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Spacer(Modifier.height(4.dp))
                     val tricksLine = buildString {
-                        append("Tricks: ")
+                        append(tricksPrefix)
                         append(config.nameOf(h.declarerSeat))
                         append(" ${h.declarerTricks}")
                         for (opp in h.opponents) {
@@ -397,8 +434,10 @@ private fun HandRow(h: Hand, config: GameConfig) {
                             append(config.nameOf(opp.seat))
                             append(" ${opp.tricks}")
                             when (opp.choice) {
-                                com.preferans.scorer.domain.WhistChoice.WHIST -> append(" (whist)")
-                                com.preferans.scorer.domain.WhistChoice.HALF_WHIST -> append(" (½)")
+                                com.preferans.scorer.domain.WhistChoice.WHIST ->
+                                    append(" $whistSuffixFull")
+                                com.preferans.scorer.domain.WhistChoice.HALF_WHIST ->
+                                    append(" $whistSuffixHalf")
                                 com.preferans.scorer.domain.WhistChoice.PASS -> Unit
                             }
                         }
@@ -413,7 +452,7 @@ private fun HandRow(h: Hand, config: GameConfig) {
                             modifier = Modifier.width(36.dp),
                         )
                         Text(
-                            "Raspasovka",
+                            stringResource(R.string.raspasovka),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                         )
@@ -422,7 +461,10 @@ private fun HandRow(h: Hand, config: GameConfig) {
                     val tricksLine = h.tricksBySeat.entries.joinToString(" · ") { (seat, n) ->
                         "${config.nameOf(seat)} $n"
                     }
-                    Text("Tricks: $tricksLine", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(R.string.tricks_prefix) + tricksLine,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
             }
         }

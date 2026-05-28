@@ -1,4 +1,139 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Preferans Scorer</string>
+
+    <!-- Common -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+
+    <!-- Setup screen -->
+    <string name="setup_title">New Preferans Game</string>
+    <string name="section_variant">Variant</string>
+    <string name="section_players">Players</string>
+    <string name="players_3">3 players</string>
+    <string name="players_4">4 players</string>
+    <string name="seat_fmt">Seat %1$d</string>
+    <string name="section_bullet_target">Bullet target</string>
+    <string name="bullet_custom">Custom</string>
+    <string name="section_first_dealer">First dealer</string>
+    <string name="action_start_game">Start game</string>
+    <string name="player_default_fmt">Player %1$d</string>
+
+    <!-- Variants -->
+    <string name="variant_sochinka">Sochinka</string>
+    <string name="variant_sochinka_desc">Standard scoring. Base point values.</string>
+    <string name="variant_leningradka">Leningradka</string>
+    <string name="variant_leningradka_desc">Mountain and whist points doubled; bullets doubled at settlement.</string>
+    <string name="variant_rostov">Rostov</string>
+    <string name="variant_rostov_desc">No mountain — each mountain unit becomes 5 whist for each opponent. Other whist halved.</string>
+
+    <!-- Scoresheet -->
+    <string name="scoresheet_title_fmt">Preferans · %1$s</string>
+    <string name="cd_undo_last_hand">Undo last hand</string>
+    <string name="menu">Menu</string>
+    <string name="menu_settle_now">Settle now</string>
+    <string name="menu_new_game">New game</string>
+    <string name="fab_new_hand">New hand</string>
+    <string name="view_table">Table</string>
+    <string name="view_visual">Visual</string>
+    <string name="col_pulja_fmt">Pulja / %1$d</string>
+    <string name="col_gora">Gora</string>
+    <string name="col_whist_total">Whist (total)</string>
+    <string name="whist_matrix_title">Whist (row scores against column)</string>
+    <string name="next_dealer_fmt">Next dealer: %1$s  ·  Hand #%2$d</string>
+    <string name="hand_history">Hand history</string>
+    <string name="no_hands_yet">No hands recorded yet. Tap “New hand” to start.</string>
+    <string name="confirm_new_game_title">Start a new game?</string>
+    <string name="confirm_new_game_text">This discards the current game and its scoresheet.</string>
+    <string name="confirm_settle_title">Settle the game now?</string>
+    <string name="confirm_settle_text">Computes final whist totals using the current state.</string>
+    <string name="action_settle">Settle</string>
+    <string name="tricks_prefix">Tricks: </string>
+    <string name="declarer_by_fmt">by %1$s</string>
+    <string name="raspasovka">Raspasovka</string>
+    <string name="whist_suffix_full">(whist)</string>
+    <string name="whist_suffix_half">(½)</string>
+
+    <!-- New hand -->
+    <string name="new_hand_title_fmt">New hand · #%1$d</string>
+    <string name="section_hand_type">Hand type</string>
+    <string name="hand_played_contract">Played contract</string>
+    <string name="hand_all_passed">All passed (Raspasovka)</string>
+    <string name="section_declarer">Declarer</string>
+    <string name="section_bid">Bid</string>
+    <string name="bid_level">Level</string>
+    <string name="bid_trump">Trump</string>
+    <string name="bid_misere">Misère</string>
+    <string name="bid_nt">NT</string>
+    <string name="section_whist">Whist</string>
+    <string name="whist_pass">Pass</string>
+    <string name="whist_full">Whist</string>
+    <string name="whist_half">Half-whist</string>
+    <string name="both_passed_title">Both opponents passed</string>
+    <string name="both_passed_desc">Declarer auto-wins all 10 tricks; no play.</string>
+    <string name="misere_no_whist">Misère has no whist — opponents always play.</string>
+    <string name="ten_no_whist">A 10-bid is always played; there is no whist option.</string>
+    <string name="half_whist_desc">Half-whist: hand ends without play. Declarer is credited as having made the contract; the half-whister scores V × (threshold / 2) whist points against declarer.</string>
+    <string name="section_tricks_taken">Tricks taken</string>
+    <string name="declarer_paren">(declarer)</string>
+    <string name="sum_of_ten_fmt">Sum: %1$d / 10</string>
+    <string name="declarer_tricks_taken">Declarer tricks taken</string>
+    <string name="misere_succeeded">Misère succeeded — +10 bullets.</string>
+    <string name="misere_failed_fmt">Misère failed — +%1$d mountain.</string>
+    <string name="section_talon">Talon honors (dealer bonus)</string>
+    <string name="talon_desc">Whist points credited to the dealer column. 0 if none.</string>
+    <string name="dealer_fmt">Dealer: %1$s</string>
+    <string name="section_tricks_raspasovka">Tricks taken (Raspasovka)</string>
+    <string name="action_record_hand">Record hand</string>
+
+    <!-- Player details sheet -->
+    <string name="name_label">Name</string>
+    <string name="cd_save_name">Save name</string>
+    <string name="stat_pulja">Pulja</string>
+    <string name="stat_gora">Gora</string>
+    <string name="stat_whist">Whist</string>
+    <string name="record_hand_as_fmt">Record hand with %1$s as declarer</string>
+    <string name="hands_involving_fmt">Hands involving this player (%1$d)</string>
+    <string name="no_hands_for_player">No hands yet.</string>
+    <string name="role_declarer_fmt">declarer · %1$dt</string>
+    <string name="role_other_fmt">%1$s · %2$dt</string>
+    <string name="role_whisted">whisted</string>
+    <string name="role_half_whisted">half-whist</string>
+    <string name="role_passed">passed</string>
+    <string name="hand_summary_played_fmt">#%1$d  %2$s by %3$s  ·  %4$s</string>
+    <string name="hand_summary_raspasovka_fmt">#%1$d  Raspasovka  ·  %2$dt</string>
+
+    <!-- Settlement -->
+    <string name="settlement_title">Settlement</string>
+    <string name="settlement_winner">Winner</string>
+    <string name="settlement_net_whist_fmt">Net whist: %1$d</string>
+    <string name="settlement_final_scores">Final scores</string>
+    <string name="col_player">Player</string>
+    <string name="col_bullets">Bullets</string>
+    <string name="col_mtn_norm">Mtn (norm)</string>
+    <string name="col_net_whist">Net whist</string>
+    <string name="settle_explain_title">How net whist is computed</string>
+    <string name="settle_explain_text">1. Normalize: subtract the lowest mountain so the best player reaches 0.\n2. Convert: multiply each normalized mountain by 10 and divide by the number of players. Record that value in the whist column for each opponent.\n3. Net whist for a player = (whist they scored against others) − (whist others scored against them).</string>
+    <string name="action_start_new_game">Start a new game</string>
+
+    <!-- Suits -->
+    <string name="suit_spades">Spades</string>
+    <string name="suit_clubs">Clubs</string>
+    <string name="suit_diamonds">Diamonds</string>
+    <string name="suit_hearts">Hearts</string>
+
+    <!-- Theme toggle -->
+    <string name="theme_system">Theme: System</string>
+    <string name="theme_light">Theme: Light</string>
+    <string name="theme_dark">Theme: Dark</string>
+
+    <!-- Language toggle -->
+    <string name="lang_system">Language: System</string>
+    <string name="lang_english">Language: English</string>
+    <string name="lang_russian">Language: Russian</string>
+
+    <!-- Visual scoresheet labels -->
+    <string name="visual_pulja_fmt">Pulja %1$d/%2$d</string>
+    <string name="visual_gora_fmt">Gora %1$d</string>
+    <string name="visual_whist_fmt">Whist %1$d</string>
 </resources>

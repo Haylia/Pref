@@ -50,7 +50,10 @@ import com.preferans.scorer.domain.Hand
 import com.preferans.scorer.domain.SeatId
 import com.preferans.scorer.domain.Suit
 import com.preferans.scorer.domain.WhisterRecord
+import androidx.compose.ui.res.stringResource
+import com.preferans.scorer.R
 import com.preferans.scorer.ui.GameViewModel
+import com.preferans.scorer.ui.localizedName
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,7 +102,7 @@ fun NewHandScreen(
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             TopAppBar(
-                title = { Text("New hand · #${game.nextHandNumber}") },
+                title = { Text(stringResource(R.string.new_hand_title_fmt, game.nextHandNumber)) },
                 navigationIcon = {
                     IconButton(onClick = onClose) { Icon(Icons.Default.Close, null) }
                 },
@@ -114,17 +117,17 @@ fun NewHandScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            SectionCard(title = "Hand type") {
+            SectionCard(title = stringResource(R.string.section_hand_type)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = !isRaspasovka,
                         onClick = { isRaspasovka = false },
-                        label = { Text("Played contract") },
+                        label = { Text(stringResource(R.string.hand_played_contract)) },
                     )
                     FilterChip(
                         selected = isRaspasovka,
                         onClick = { isRaspasovka = true },
-                        label = { Text("All passed (Raspasovka)") },
+                        label = { Text(stringResource(R.string.hand_all_passed)) },
                     )
                 }
             }
@@ -137,7 +140,7 @@ fun NewHandScreen(
                 .any { whistChoice[it] == com.preferans.scorer.domain.WhistChoice.HALF_WHIST }
 
             if (!isRaspasovka) {
-                SectionCard(title = "Declarer") {
+                SectionCard(title = stringResource(R.string.section_declarer)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         activeSeats.forEach { s ->
                             FilterChip(
@@ -149,8 +152,8 @@ fun NewHandScreen(
                     }
                 }
 
-                SectionCard(title = "Bid") {
-                    Text("Level", style = MaterialTheme.typography.labelMedium)
+                SectionCard(title = stringResource(R.string.section_bid)) {
+                    Text(stringResource(R.string.bid_level), style = MaterialTheme.typography.labelMedium)
                     Spacer(Modifier.height(6.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf(6, 7, 8, 9, 10).forEach { lv ->
@@ -163,37 +166,34 @@ fun NewHandScreen(
                         FilterChip(
                             selected = isMisere,
                             onClick = { isMisere = true },
-                            label = { Text("Misère") },
+                            label = { Text(stringResource(R.string.bid_misere)) },
                         )
                     }
                     if (!isMisere) {
                         Spacer(Modifier.height(10.dp))
-                        Text("Trump", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.bid_trump), style = MaterialTheme.typography.labelMedium)
                         Spacer(Modifier.height(6.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Suit.values().forEach { s ->
+                            Suit.entries.forEach { s ->
                                 FilterChip(
                                     selected = suit == s,
                                     onClick = { suit = s },
-                                    label = { Text("${s.symbol} ${s.displayName}") },
+                                    label = { Text("${s.symbol} ${s.localizedName()}") },
                                 )
                             }
                             FilterChip(
                                 selected = suit == null,
                                 onClick = { suit = null },
-                                label = { Text("NT") },
+                                label = { Text(stringResource(R.string.bid_nt)) },
                             )
                         }
                     }
                 }
 
-                // The "both passed → auto-win" rule only applies to 6–9 level
-                // suit/NT bids. Level 10 is always played (rules: whist N/A),
-                // and Misère has no whist concept at all.
                 val autoWinApplies = !isMisere && level < 10
                 if (!autoWinApplies && autoWin) autoWin = false
 
-                SectionCard(title = "Whist") {
+                SectionCard(title = stringResource(R.string.section_whist)) {
                     if (autoWinApplies) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Switch(
@@ -202,9 +202,12 @@ fun NewHandScreen(
                             )
                             Spacer(Modifier.width(8.dp))
                             Column {
-                                Text("Both opponents passed", fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    "Declarer auto-wins all 10 tricks; no play.",
+                                    stringResource(R.string.both_passed_title),
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    stringResource(R.string.both_passed_desc),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -212,13 +215,13 @@ fun NewHandScreen(
                         }
                     } else if (isMisere) {
                         Text(
-                            "Misère has no whist — opponents always play.",
+                            stringResource(R.string.misere_no_whist),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else {
                         Text(
-                            "A 10-bid is always played; there is no whist option.",
+                            stringResource(R.string.ten_no_whist),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -237,16 +240,15 @@ fun NewHandScreen(
                                 )
                                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     listOf(
-                                        com.preferans.scorer.domain.WhistChoice.PASS to "Pass",
-                                        com.preferans.scorer.domain.WhistChoice.WHIST to "Whist",
-                                        com.preferans.scorer.domain.WhistChoice.HALF_WHIST to "Half-whist",
-                                    ).forEach { (choiceValue, choiceLabel) ->
+                                        com.preferans.scorer.domain.WhistChoice.PASS to R.string.whist_pass,
+                                        com.preferans.scorer.domain.WhistChoice.WHIST to R.string.whist_full,
+                                        com.preferans.scorer.domain.WhistChoice.HALF_WHIST to R.string.whist_half,
+                                    ).forEach { (choiceValue, labelRes) ->
                                         val isHalf = choiceValue == com.preferans.scorer.domain.WhistChoice.HALF_WHIST
                                         FilterChip(
                                             selected = whistChoice[opp] == choiceValue,
                                             onClick = {
                                                 whistChoice[opp] = choiceValue
-                                                // Mutex: half-whist requires the other opp to PASS
                                                 if (isHalf) {
                                                     opponents.filter { it != opp }.forEach { other ->
                                                         whistChoice[other] = com.preferans.scorer.domain.WhistChoice.PASS
@@ -254,7 +256,7 @@ fun NewHandScreen(
                                                 }
                                             },
                                             enabled = !isHalf || halfWhistAllowed,
-                                            label = { Text(choiceLabel) },
+                                            label = { Text(stringResource(labelRes)) },
                                         )
                                     }
                                 }
@@ -263,9 +265,7 @@ fun NewHandScreen(
                         if (anyHalfWhist) {
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                "Half-whist: hand ends without play. Declarer is credited as " +
-                                    "having made the contract; the half-whister scores " +
-                                    "V × (threshold / 2) whist points against declarer.",
+                                stringResource(R.string.half_whist_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -274,10 +274,10 @@ fun NewHandScreen(
                 }
 
                 if (!autoWin && !isMisere && !anyHalfWhist) {
-                    SectionCard(title = "Tricks taken") {
+                    SectionCard(title = stringResource(R.string.section_tricks_taken)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                "${game.config.nameOf(declarerSeat)} (declarer)",
+                                "${game.config.nameOf(declarerSeat)} ${stringResource(R.string.declarer_paren)}",
                                 modifier = Modifier.width(180.dp),
                             )
                             NumberStepper(value = declarerTricks, range = 0..10) { declarerTricks = it }
@@ -295,7 +295,7 @@ fun NewHandScreen(
                             if (sum == 10) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.error
                         Text(
-                            "Sum: $sum / 10",
+                            stringResource(R.string.sum_of_ten_fmt, sum),
                             color = color,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
@@ -304,11 +304,13 @@ fun NewHandScreen(
                 }
 
                 if (isMisere) {
-                    SectionCard(title = "Declarer tricks taken") {
+                    SectionCard(title = stringResource(R.string.declarer_tricks_taken)) {
                         NumberStepper(value = declarerTricks, range = 0..10) { declarerTricks = it }
                         Text(
-                            if (declarerTricks == 0) "Misère succeeded — +10 bullets."
-                            else "Misère failed — +${10 * declarerTricks} mountain.",
+                            if (declarerTricks == 0)
+                                stringResource(R.string.misere_succeeded)
+                            else
+                                stringResource(R.string.misere_failed_fmt, 10 * declarerTricks),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -316,16 +318,16 @@ fun NewHandScreen(
                 }
 
                 if (game.config.playerCount == 4) {
-                    SectionCard(title = "Talon honors (dealer bonus)") {
+                    SectionCard(title = stringResource(R.string.section_talon)) {
                         Text(
-                            "Whist points credited to the dealer column. 0 if none.",
+                            stringResource(R.string.talon_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.height(6.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                "Dealer: ${game.config.nameOf(game.nextDealerSeat)}",
+                                stringResource(R.string.dealer_fmt, game.config.nameOf(game.nextDealerSeat)),
                                 modifier = Modifier.width(180.dp),
                             )
                             NumberStepper(value = talonBonus, range = 0..40) { talonBonus = it }
@@ -333,8 +335,7 @@ fun NewHandScreen(
                     }
                 }
             } else {
-                // Raspasovka
-                SectionCard(title = "Tricks taken (Raspasovka)") {
+                SectionCard(title = stringResource(R.string.section_tricks_raspasovka)) {
                     activeSeats.forEach { s ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(game.config.nameOf(s), modifier = Modifier.width(180.dp))
@@ -348,7 +349,7 @@ fun NewHandScreen(
                         if (sum == 10) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.error
                     Text(
-                        "Sum: $sum / 10",
+                        stringResource(R.string.sum_of_ten_fmt, sum),
                         color = color,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
@@ -435,7 +436,7 @@ fun NewHandScreen(
                 enabled = canSubmit,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Record hand")
+                Text(stringResource(R.string.action_record_hand))
             }
         }
     }

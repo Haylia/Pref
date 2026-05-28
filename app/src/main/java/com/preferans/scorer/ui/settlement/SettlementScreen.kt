@@ -30,11 +30,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.preferans.scorer.R
 import com.preferans.scorer.scoring.ScoringEngine
 import com.preferans.scorer.ui.GameViewModel
+import com.preferans.scorer.ui.theme.LanguageToggleButton
 import com.preferans.scorer.ui.theme.ThemeToggleButton
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,8 +55,11 @@ fun SettlementScreen(
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             TopAppBar(
-                title = { Text("Settlement") },
-                actions = { ThemeToggleButton() },
+                title = { Text(stringResource(R.string.settlement_title)) },
+                actions = {
+                    LanguageToggleButton()
+                    ThemeToggleButton()
+                },
             )
         },
     ) { inner ->
@@ -75,7 +81,7 @@ fun SettlementScreen(
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(
-                            "Winner",
+                            stringResource(R.string.settlement_winner),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
@@ -86,7 +92,7 @@ fun SettlementScreen(
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                         Text(
-                            "Net whist: ${settlement.netWhist[w]}",
+                            stringResource(R.string.settlement_net_whist_fmt, settlement.netWhist[w] ?: 0),
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                     }
@@ -100,16 +106,16 @@ fun SettlementScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        "Final scores",
+                        stringResource(R.string.settlement_final_scores),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Spacer(Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Cell("Player", w = 1.6f, align = TextAlign.Start)
-                        Cell("Bullets", w = 1f, header = true)
-                        Cell("Mtn (norm)", w = 1.2f, header = true)
-                        Cell("Net whist", w = 1.2f, header = true)
+                        Cell(stringResource(R.string.col_player), w = 1.6f, align = TextAlign.Start, header = true)
+                        Cell(stringResource(R.string.col_bullets), w = 1f, header = true)
+                        Cell(stringResource(R.string.col_mtn_norm), w = 1.2f, header = true)
+                        Cell(stringResource(R.string.col_net_whist), w = 1.2f, header = true)
                     }
                     HRule()
                     seats.forEach { s ->
@@ -137,23 +143,20 @@ fun SettlementScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        "How net whist is computed",
+                        stringResource(R.string.settle_explain_title),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "1. Normalize: subtract the lowest mountain so the best player reaches 0.\n" +
-                            "2. Convert: multiply each normalized mountain by 10 and divide by the number of players. " +
-                            "Record that value in the whist column for each opponent.\n" +
-                            "3. Net whist for a player = (whist they scored against others) − (whist others scored against them).",
+                        stringResource(R.string.settle_explain_text),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
 
             Button(onClick = onNewGame, modifier = Modifier.fillMaxWidth()) {
-                Text("Start a new game")
+                Text(stringResource(R.string.action_start_new_game))
             }
         }
     }

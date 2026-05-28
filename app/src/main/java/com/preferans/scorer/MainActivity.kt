@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.preferans.scorer.domain.ThemePref
 import com.preferans.scorer.ui.PreferansApp
+import com.preferans.scorer.ui.WithLocale
 import com.preferans.scorer.ui.theme.PreferansTheme
 
 class MainActivity : ComponentActivity() {
@@ -16,14 +17,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val themePref by PreferansApp.instance.settingsRepository.theme.collectAsState()
+            val settings = PreferansApp.instance.settingsRepository
+            val themePref by settings.theme.collectAsState()
+            val langPref by settings.language.collectAsState()
             val isDark = when (themePref) {
                 ThemePref.SYSTEM -> isSystemInDarkTheme()
                 ThemePref.LIGHT -> false
                 ThemePref.DARK -> true
             }
-            PreferansTheme(darkTheme = isDark) {
-                PreferansApp()
+            WithLocale(localeTag = langPref.tag) {
+                PreferansTheme(darkTheme = isDark) {
+                    PreferansApp()
+                }
             }
         }
     }
