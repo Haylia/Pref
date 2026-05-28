@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Preferans</string>
+
+    <!-- Allgemein -->
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_save">Speichern</string>
+
+    <!-- Spiel-Setup -->
+    <string name="setup_title">Neues Preferans-Spiel</string>
+    <string name="section_variant">Variante</string>
+    <string name="section_players">Spieler</string>
+    <string name="players_3">3 Spieler</string>
+    <string name="players_4">4 Spieler</string>
+    <string name="seat_fmt">Platz %1$d</string>
+    <string name="section_bullet_target">Pulja-Ziel</string>
+    <string name="bullet_custom">Eigene</string>
+    <string name="section_first_dealer">Erster Geber</string>
+    <string name="action_start_game">Spiel starten</string>
+    <string name="player_default_fmt">Spieler %1$d</string>
+
+    <!-- Varianten -->
+    <string name="variant_sochinka">Sotschinka</string>
+    <string name="variant_sochinka_desc">Standardwertung. Grundpunktwerte.</string>
+    <string name="variant_leningradka">Leningradka</string>
+    <string name="variant_leningradka_desc">Gora und Wist werden verdoppelt; Pulja bei der Abrechnung verdoppelt.</string>
+    <string name="variant_rostov">Rostow</string>
+    <string name="variant_rostov_desc">Keine Gora — jeder Gora-Punkt wird zu 5 Wist für jeden Gegner. Übriger Wist halbiert.</string>
+
+    <!-- Hauptbildschirm -->
+    <string name="scoresheet_title_fmt">Preferans · %1$s</string>
+    <string name="cd_undo_last_hand">Letzte Hand rückgängig machen</string>
+    <string name="menu">Menü</string>
+    <string name="menu_settle_now">Jetzt abrechnen</string>
+    <string name="menu_new_game">Neues Spiel</string>
+    <string name="fab_new_hand">Neue Hand</string>
+    <string name="view_table">Tabelle</string>
+    <string name="view_visual">Schema</string>
+    <string name="col_pulja_fmt">Pulja / %1$d</string>
+    <string name="col_gora">Gora</string>
+    <string name="col_whist_total">Wist (gesamt)</string>
+    <string name="whist_matrix_title">Wist (Zeile gegen Spalte)</string>
+    <string name="next_dealer_fmt">Nächster Geber: %1$s  ·  Hand Nr. %2$d</string>
+    <string name="hand_history">Verlauf</string>
+    <string name="no_hands_yet">Noch keine Hände erfasst. Tippe auf „Neue Hand", um zu beginnen.</string>
+    <string name="confirm_new_game_title">Neues Spiel beginnen?</string>
+    <string name="confirm_new_game_text">Das aktuelle Spiel und sein Spielstand werden verworfen.</string>
+    <string name="confirm_settle_title">Spiel jetzt abrechnen?</string>
+    <string name="confirm_settle_text">Berechnet die endgültigen Wist-Summen aus dem aktuellen Stand.</string>
+    <string name="action_settle">Abrechnen</string>
+    <string name="tricks_prefix">Stiche: </string>
+    <string name="declarer_by_fmt">von %1$s</string>
+    <string name="raspasovka">Raspasowka</string>
+    <string name="whist_suffix_full">(Wist)</string>
+    <string name="whist_suffix_half">(½)</string>
+
+    <!-- Neue Hand -->
+    <string name="new_hand_title_fmt">Neue Hand · Nr. %1$d</string>
+    <string name="section_hand_type">Art der Hand</string>
+    <string name="hand_played_contract">Gespielter Kontrakt</string>
+    <string name="hand_all_passed">Alle gepasst (Raspasowka)</string>
+    <string name="section_declarer">Ansager</string>
+    <string name="section_bid">Reizung</string>
+    <string name="bid_level">Stufe</string>
+    <string name="bid_trump">Trumpf</string>
+    <string name="bid_misere">Misère</string>
+    <string name="bid_nt">OT</string>
+    <string name="section_whist">Wist</string>
+    <string name="whist_pass">Pas</string>
+    <string name="whist_full">Wist</string>
+    <string name="whist_half">Halbwist</string>
+    <string name="both_passed_title">Beide Gegner gepasst</string>
+    <string name="both_passed_desc">Der Ansager erhält automatisch alle 10 Stiche; es wird nicht gespielt.</string>
+    <string name="misere_no_whist">Misère hat keinen Wist — die Gegner spielen immer.</string>
+    <string name="ten_no_whist">Eine 10er-Reizung wird immer gespielt; es gibt keinen Wist.</string>
+    <string name="half_whist_desc">Halbwist: Die Hand endet ohne Spiel. Der Ansager erhält den Kontrakt als erfüllt; der Halbwister bekommt V × (Schwelle / 2) Wist-Punkte gegen den Ansager.</string>
+    <string name="section_tricks_taken">Erzielte Stiche</string>
+    <string name="declarer_paren">(Ansager)</string>
+    <string name="sum_of_ten_fmt">Summe: %1$d / 10</string>
+    <string name="declarer_tricks_taken">Stiche des Ansagers</string>
+    <string name="misere_succeeded">Misère gelungen — +10 in die Pulja.</string>
+    <string name="misere_failed_fmt">Misère verloren — +%1$d in die Gora.</string>
+    <string name="section_talon">Talon-Ehren (Geberbonus)</string>
+    <string name="talon_desc">Wist-Punkte für die Geberspalte. 0, falls keine.</string>
+    <string name="dealer_fmt">Geber: %1$s</string>
+    <string name="section_tricks_raspasovka">Erzielte Stiche (Raspasowka)</string>
+    <string name="action_record_hand">Hand erfassen</string>
+
+    <!-- Spielerdetails -->
+    <string name="name_label">Name</string>
+    <string name="cd_save_name">Name speichern</string>
+    <string name="stat_pulja">Pulja</string>
+    <string name="stat_gora">Gora</string>
+    <string name="stat_whist">Wist</string>
+    <string name="record_hand_as_fmt">Hand mit %1$s als Ansager erfassen</string>
+    <string name="no_hands_for_player">Noch keine Hände.</string>
+    <string name="role_declarer_fmt">Ansager · %1$d St.</string>
+    <string name="role_other_fmt">%1$s · %2$d St.</string>
+    <string name="role_whisted">wistete</string>
+    <string name="role_half_whisted">Halbwist</string>
+    <string name="role_passed">passte</string>
+    <string name="hand_summary_played_fmt">#%1$d  %2$s von %3$s  ·  %4$s</string>
+    <string name="hand_summary_raspasovka_fmt">#%1$d  Raspasowka  ·  %2$d St.</string>
+
+    <!-- Abrechnung -->
+    <string name="settlement_title">Abrechnung</string>
+    <string name="settlement_winner">Gewinner</string>
+    <string name="settlement_net_whist_fmt">Netto-Wist: %1$d</string>
+    <string name="settlement_final_scores">Endstand</string>
+    <string name="col_player">Spieler</string>
+    <string name="col_bullets">Pulja</string>
+    <string name="col_mtn_norm">Gora (norm.)</string>
+    <string name="col_net_whist">Netto-Wist</string>
+    <string name="settle_explain_title">Wie der Netto-Wist berechnet wird</string>
+    <string name="settle_explain_text">1. Normalisierung: der niedrigste Gora-Wert wird von allen abgezogen, sodass der beste Spieler 0 erreicht.\n2. Umwandlung: jeder normalisierte Gora-Wert wird mit 10 multipliziert und durch die Spielerzahl geteilt; das Ergebnis kommt in die Wist-Spalte jedes Gegners.\n3. Netto-Wist eines Spielers = (Wist, den er gegen andere erzielt hat) − (Wist, den andere gegen ihn erzielt haben).</string>
+    <string name="action_start_new_game">Neues Spiel starten</string>
+
+    <!-- Farben -->
+    <string name="suit_spades">Pik</string>
+    <string name="suit_clubs">Kreuz</string>
+    <string name="suit_diamonds">Karo</string>
+    <string name="suit_hearts">Herz</string>
+
+    <!-- Thema -->
+    <string name="theme_system">Thema: System</string>
+    <string name="theme_light">Thema: Hell</string>
+    <string name="theme_dark">Thema: Dunkel</string>
+
+    <!-- Sprachauswahl -->
+    <string name="lang_picker_title">Sprache</string>
+    <string name="lang_system_short">Systemstandard</string>
+
+    <!-- Geber wistet (4 Spieler) -->
+    <string name="section_dealer_whists">Geber wistet (4 Spieler)</string>
+    <string name="dealer_whists_desc">Wenn beide Gegner passen, kann der Geber wisten und die Karten eines Gegners übernehmen. Die Punkte dieser Hand gehen an den Geber.</string>
+    <string name="dealer_whists_none">Wistet nicht</string>
+    <string name="dealer_takes_fmt">Übernimmt Karten von %1$s</string>
+    <string name="dealer_label">(Geber)</string>
+
+    <!-- Schema-Beschriftungen -->
+    <string name="visual_pulja_fmt">Pulja %1$d/%2$d</string>
+    <string name="visual_gora_fmt">Gora %1$d</string>
+    <string name="visual_whist_fmt">Wist %1$d</string>
+</resources>

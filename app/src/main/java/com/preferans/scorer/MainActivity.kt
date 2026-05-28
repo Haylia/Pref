@@ -19,13 +19,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settings = PreferansApp.instance.settingsRepository
             val themePref by settings.theme.collectAsState()
-            val langPref by settings.language.collectAsState()
+            val languageTag by settings.languageTag.collectAsState()
             val isDark = when (themePref) {
                 ThemePref.SYSTEM -> isSystemInDarkTheme()
                 ThemePref.LIGHT -> false
                 ThemePref.DARK -> true
             }
-            WithLocale(localeTag = langPref.tag) {
+            WithLocale(localeTag = languageTag) {
                 PreferansTheme(darkTheme = isDark) {
                     PreferansApp()
                 }

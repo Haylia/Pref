@@ -45,6 +45,14 @@ sealed class Hand {
         val opponents: List<WhisterRecord>,
         /** Optional talon honor bonus (4-player only). Whist points credited to the dealer column against the declarer. */
         val talonWhistBonus: Int = 0,
+        /**
+         * 4-player only: when both non-dealer opponents would have passed, the dealer
+         * may opt to whist by taking one opponent's hand. That opponent's seat goes
+         * here; their [WhisterRecord] will still be present in [opponents] (with
+         * choice = WHIST) but the scoring engine redirects all deltas originally
+         * destined for that seat to [dealerSeat] instead.
+         */
+        val dealerStandsInFor: SeatId? = null,
     ) : Hand() {
         init {
             require(declarerTricks in 0..10) { "Declarer tricks must be 0..10" }

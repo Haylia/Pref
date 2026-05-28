@@ -4,16 +4,53 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- Classic Preferans score-sheet geometry, kept light behind the wordmark. -->
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M54,30 L62,46 L80,48 L66,60 L70,78 L54,68 L38,78 L42,60 L28,48 L46,46 Z" />
+        android:fillColor="#00000000"
+        android:pathData="M54,16 L92,54 L54,92 L16,54 Z"
+        android:strokeColor="#C9D6C9"
+        android:strokeLineJoin="miter"
+        android:strokeWidth="3" />
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M40,72 L40,86 L42,86 L42,74 L46,74 L46,86 L48,86 L48,72 Z" />
+        android:fillColor="#00000000"
+        android:pathData="M54,16 L54,92 M16,54 L92,54 M31,31 L77,77 M77,31 L31,77"
+        android:strokeColor="#DDE4DD"
+        android:strokeLineCap="square"
+        android:strokeWidth="2" />
+
+    <!-- Filled wordmark box. -->
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M52,72 L52,86 L60,86 L60,84 L54,84 L54,80 L59,80 L59,78 L54,78 L54,74 L60,74 L60,72 Z" />
+        android:fillColor="#1B5E20"
+        android:pathData="M16,39 L92,39 L92,69 L16,69 Z" />
+
+    <!-- PREF, drawn as simple block strokes so the icon stays vector-only. -->
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M64,72 L64,86 L66,86 L66,80 L70,86 L72,86 L68,80 C71,80 72,78 72,76 C72,74 71,72 68,72 Z M66,74 L68,74 C69,74 70,75 70,76 C70,77 69,78 68,78 L66,78 Z" />
+        android:fillColor="#00000000"
+        android:pathData="M23,64 L23,44 L34,44 L38,48 L38,54 L34,58 L23,58"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="square"
+        android:strokeLineJoin="miter"
+        android:strokeWidth="4" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M41,64 L41,44 L52,44 L56,48 L56,54 L52,58 L41,58 M49,58 L57,64"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="square"
+        android:strokeLineJoin="miter"
+        android:strokeWidth="4" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M63,44 L63,64 M63,44 L75,44 M63,54 L73,54 M63,64 L75,64"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="square"
+        android:strokeLineJoin="miter"
+        android:strokeWidth="4" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M82,64 L82,44 M82,44 L90,44 M82,54 L89,54"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="square"
+        android:strokeLineJoin="miter"
+        android:strokeWidth="4" />
 </vector>

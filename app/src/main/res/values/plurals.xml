@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Header for the "this player's hands" list in the details sheet.
+         English: "1 hand involving this player" / "5 hands involving this player". -->
+    <plurals name="hands_involving">
+        <item quantity="one">%1$d hand involving this player</item>
+        <item quantity="other">%1$d hands involving this player</item>
+    </plurals>
+
+</resources>

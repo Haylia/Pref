@@ -3,9 +3,12 @@ package com.preferans.scorer.ui
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import com.preferans.scorer.PreferansApp
 import java.util.Locale
 
 /**
@@ -15,6 +18,20 @@ import java.util.Locale
  *
  * Pass null to use the system default locale (no override).
  */
+/**
+ * Re-applies the current language preference. Use this inside any popup/dialog
+ * content slot (DropdownMenu, AlertDialog, ModalBottomSheet, etc.) — popups
+ * create their own ComposeView, which re-provides `LocalContext` from the host
+ * Activity and so overwrites the override [WithLocale] set up at the root.
+ *
+ * Wrapping the popup's content with this restores the locale-aware context.
+ */
+@Composable
+fun WithCurrentLocale(content: @Composable () -> Unit) {
+    val tag by PreferansApp.instance.settingsRepository.languageTag.collectAsState()
+    WithLocale(localeTag = tag) { content() }
+}
+
 @Composable
 fun WithLocale(localeTag: String?, content: @Composable () -> Unit) {
     if (localeTag.isNullOrEmpty()) {

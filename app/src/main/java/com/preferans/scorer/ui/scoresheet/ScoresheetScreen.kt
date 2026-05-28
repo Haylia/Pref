@@ -55,6 +55,7 @@ import com.preferans.scorer.domain.Variant
 import androidx.compose.ui.res.stringResource
 import com.preferans.scorer.R
 import com.preferans.scorer.ui.GameViewModel
+import com.preferans.scorer.ui.WithCurrentLocale
 import com.preferans.scorer.ui.localizedDisplayName
 import com.preferans.scorer.ui.localizedName
 import com.preferans.scorer.ui.theme.LanguageToggleButton
@@ -109,14 +110,16 @@ fun ScoresheetScreen(
                             expanded = menuOpen,
                             onDismissRequest = { menuOpen = false },
                         ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.menu_settle_now)) },
-                                onClick = { menuOpen = false; confirmSettle = true },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.menu_new_game)) },
-                                onClick = { menuOpen = false; confirmNew = true },
-                            )
+                            WithCurrentLocale {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.menu_settle_now)) },
+                                    onClick = { menuOpen = false; confirmSettle = true },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.menu_new_game)) },
+                                    onClick = { menuOpen = false; confirmNew = true },
+                                )
+                            }
                         }
                     }
                 },
@@ -203,17 +206,21 @@ fun ScoresheetScreen(
         AlertDialog(
             onDismissRequest = { confirmNew = false },
             confirmButton = {
-                TextButton(onClick = { confirmNew = false; onNewGame() }) {
-                    Text(stringResource(R.string.menu_new_game))
+                WithCurrentLocale {
+                    TextButton(onClick = { confirmNew = false; onNewGame() }) {
+                        Text(stringResource(R.string.menu_new_game))
+                    }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmNew = false }) {
-                    Text(stringResource(R.string.action_cancel))
+                WithCurrentLocale {
+                    TextButton(onClick = { confirmNew = false }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
                 }
             },
-            title = { Text(stringResource(R.string.confirm_new_game_title)) },
-            text = { Text(stringResource(R.string.confirm_new_game_text)) },
+            title = { WithCurrentLocale { Text(stringResource(R.string.confirm_new_game_title)) } },
+            text = { WithCurrentLocale { Text(stringResource(R.string.confirm_new_game_text)) } },
         )
     }
 
@@ -221,17 +228,21 @@ fun ScoresheetScreen(
         AlertDialog(
             onDismissRequest = { confirmSettle = false },
             confirmButton = {
-                TextButton(onClick = { confirmSettle = false; onSettle() }) {
-                    Text(stringResource(R.string.action_settle))
+                WithCurrentLocale {
+                    TextButton(onClick = { confirmSettle = false; onSettle() }) {
+                        Text(stringResource(R.string.action_settle))
+                    }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmSettle = false }) {
-                    Text(stringResource(R.string.action_cancel))
+                WithCurrentLocale {
+                    TextButton(onClick = { confirmSettle = false }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
                 }
             },
-            title = { Text(stringResource(R.string.confirm_settle_title)) },
-            text = { Text(stringResource(R.string.confirm_settle_text)) },
+            title = { WithCurrentLocale { Text(stringResource(R.string.confirm_settle_title)) } },
+            text = { WithCurrentLocale { Text(stringResource(R.string.confirm_settle_text)) } },
         )
     }
 

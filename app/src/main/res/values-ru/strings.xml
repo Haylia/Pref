@@ -93,7 +93,6 @@
     <string name="stat_gora">Гора</string>
     <string name="stat_whist">Вист</string>
     <string name="record_hand_as_fmt">Записать раздачу: %1$s — разыгрывающий</string>
-    <string name="hands_involving_fmt">Раздачи с участием игрока (%1$d)</string>
     <string name="no_hands_for_player">Раздач нет.</string>
     <string name="role_declarer_fmt">разыгрывал · %1$d вз.</string>
     <string name="role_other_fmt">%1$s · %2$d вз.</string>
@@ -127,10 +126,16 @@
     <string name="theme_light">Тема: светлая</string>
     <string name="theme_dark">Тема: тёмная</string>
 
-    <!-- Язык -->
-    <string name="lang_system">Язык: системный</string>
-    <string name="lang_english">Язык: английский</string>
-    <string name="lang_russian">Язык: русский</string>
+    <!-- Выбор языка -->
+    <string name="lang_picker_title">Язык</string>
+    <string name="lang_system_short">Системный</string>
+
+    <!-- Сдающий вистует (4 игрока) -->
+    <string name="section_dealer_whists">Сдающий вистует (4 игрока)</string>
+    <string name="dealer_whists_desc">Если оба соперника пасуют, сдающий может вступить в игру, взяв руку одного из них. Очки за эту раздачу пойдут сдающему.</string>
+    <string name="dealer_whists_none">Не вистует</string>
+    <string name="dealer_takes_fmt">Берёт руку %1$s</string>
+    <string name="dealer_label">(сдающий)</string>
 
     <!-- Подписи на схеме -->
     <string name="visual_pulja_fmt">Пуля %1$d/%2$d</string>

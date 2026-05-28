@@ -93,7 +93,6 @@
     <string name="stat_gora">Gora</string>
     <string name="stat_whist">Whist</string>
     <string name="record_hand_as_fmt">Record hand with %1$s as declarer</string>
-    <string name="hands_involving_fmt">Hands involving this player (%1$d)</string>
     <string name="no_hands_for_player">No hands yet.</string>
     <string name="role_declarer_fmt">declarer · %1$dt</string>
     <string name="role_other_fmt">%1$s · %2$dt</string>
@@ -127,10 +126,16 @@
     <string name="theme_light">Theme: Light</string>
     <string name="theme_dark">Theme: Dark</string>
 
-    <!-- Language toggle -->
-    <string name="lang_system">Language: System</string>
-    <string name="lang_english">Language: English</string>
-    <string name="lang_russian">Language: Russian</string>
+    <!-- Language picker -->
+    <string name="lang_picker_title">Language</string>
+    <string name="lang_system_short">System default</string>
+
+    <!-- 4-player dealer whist -->
+    <string name="section_dealer_whists">Dealer whists (4-player)</string>
+    <string name="dealer_whists_desc">If both opponents pass, the dealer may opt to whist by taking one opponent\'s hand. Scoring for that hand goes to the dealer.</string>
+    <string name="dealer_whists_none">Doesn\'t whist</string>
+    <string name="dealer_takes_fmt">Takes %1$s\'s hand</string>
+    <string name="dealer_label">(dealer)</string>
 
     <!-- Visual scoresheet labels -->
     <string name="visual_pulja_fmt">Pulja %1$d/%2$d</string>

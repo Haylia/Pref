@@ -642,6 +642,76 @@ class ScoringEngineTest {
         assertTrue("seat 3 should have mountain-substitute whist", o3 >= 10)
     }
 
+    // ── 4-player raspasovka dealer bonus ────────────────────────────────────
+
+    @Test fun raspasovka_fourPlayer_dealerZeroTricks_gets10Bullets() {
+        // Dealer (seat 0) plays widow, wins 0 tricks → +10 bullets.
+        // Other 3 share the 10 tricks. Any of them with 0 also gets +1.
+        val cfg = fourPlayerConfig()
+        val hand = Hand.Raspasovka(
+            handNumber = 1,
+            dealerSeat = 0,
+            tricksBySeat = mapOf(0 to 0, 1 to 4, 2 to 3, 3 to 3),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(10, result.scores[0]?.bullet) // dealer +10
+        assertEquals(0, result.scores[0]?.mountain)
+        assertEquals(4, result.scores[1]?.mountain)
+        assertEquals(3, result.scores[2]?.mountain)
+        assertEquals(3, result.scores[3]?.mountain)
+    }
+
+    @Test fun raspasovka_fourPlayer_nonDealerZeroTricks_gets1Bullet() {
+        val cfg = fourPlayerConfig()
+        // Dealer takes 2, one non-dealer takes 0.
+        val hand = Hand.Raspasovka(
+            handNumber = 1,
+            dealerSeat = 0,
+            tricksBySeat = mapOf(0 to 2, 1 to 0, 2 to 4, 3 to 4),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(0, result.scores[0]?.bullet) // dealer took 2 → no bullet
+        assertEquals(2, result.scores[0]?.mountain) // dealer mountain
+        assertEquals(1, result.scores[1]?.bullet) // non-dealer 0 → +1
+        assertEquals(0, result.scores[1]?.mountain)
+    }
+
+    // ── Dealer stands in for an opponent (4-player) ─────────────────────────
+
+    @Test fun fourPlayer_dealerStandsInFor_redirectsOppScoreToDealer() {
+        // 4P, declarer = seat 1, dealer = seat 0. Both opps would have passed,
+        // but dealer steps in for seat 2. Declarer bids 6♠ and fails by 1.
+        // Without redirect: seat 2 (the original opp) gets the whist credit.
+        // With dealerStandsInFor = 2: that credit must instead go to seat 0.
+        val cfg = fourPlayerConfig()
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 1,
+            bid = Bid.SuitBid(6, Suit.SPADES),
+            declarerTricks = 5,
+            opponents = listOf(
+                // Seat 2 is "the opp" but the dealer is playing as them.
+                WhisterRecord(seat = 2, choice = WhistChoice.WHIST, tricks = 3),
+                WhisterRecord(seat = 3, choice = WhistChoice.PASS, tricks = 2),
+            ),
+            dealerStandsInFor = 2,
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        // V[6]=2, short=1. Declarer +2 mountain.
+        assertEquals(2, result.scores[1]?.mountain)
+        // Mirror whist V*1=2 to each opp. Whist bonus V (split among 1 whister) = 2.
+        // Seat 2's credits redirect to dealer (seat 0): mirror 2 + bonus 2 = 4.
+        assertEquals(4, result.scores[0]?.whistAgainst?.get(1))
+        // Seat 2 itself gets nothing.
+        assertEquals(null, result.scores[2]?.whistAgainst?.get(1))
+        // Seat 3 (the actual passer) still gets the mirror whist.
+        assertEquals(2, result.scores[3]?.whistAgainst?.get(1))
+    }
+
     // ── 4-player smoke test ─────────────────────────────────────────────────
 
     @Test fun fourPlayer_dealerSitsOut_scoringDoesntTouchDealer() {

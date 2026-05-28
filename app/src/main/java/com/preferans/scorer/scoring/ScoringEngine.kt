@@ -137,7 +137,23 @@ object ScoringEngine {
             }
         }
 
-        return deltas
+        return redirectIfDealerStoodIn(deltas, hand)
+    }
+
+    /**
+     * 4-player dealer-whisted-for-someone rule: if the dealer played one opponent's
+     * hand, every score delta originally destined for that opponent's seat must
+     * instead credit/debit the dealer's seat. Whist-against-declarer relationships
+     * remain pointed at the declarer.
+     */
+    private fun redirectIfDealerStoodIn(
+        deltas: List<ScoreDelta>,
+        hand: Hand.Played,
+    ): List<ScoreDelta> {
+        val standIn = hand.dealerStandsInFor ?: return deltas
+        return deltas.map { d ->
+            if (d.seat == standIn) d.copy(seat = hand.dealerSeat) else d
+        }
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -146,9 +162,17 @@ object ScoringEngine {
 
     private fun scoreRaspasovka(hand: Hand.Raspasovka, config: GameConfig): List<ScoreDelta> {
         val deltas = mutableListOf<ScoreDelta>()
+        val fourPlayer = config.playerCount == 4
         for ((seat, tricks) in hand.tricksBySeat) {
+            val isDealer = fourPlayer && seat == hand.dealerSeat
             when {
-                tricks == 0 -> deltas += ScoreDelta(seat = seat, bullet = 1)
+                // In 4-player raspasovka, the dealer plays only the widow's two
+                // tricks. Winning zero earns +10 bullets (per Cats); other
+                // players who win zero earn +1 as usual.
+                tricks == 0 -> deltas += ScoreDelta(
+                    seat = seat,
+                    bullet = if (isDealer) 10 else 1,
+                )
                 tricks > 0 -> deltas += ScoreDelta(seat = seat, mountain = tricks)
             }
         }

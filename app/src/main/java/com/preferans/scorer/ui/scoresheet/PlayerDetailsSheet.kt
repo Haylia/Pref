@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.preferans.scorer.R
 import com.preferans.scorer.domain.Bid
@@ -41,6 +42,7 @@ import com.preferans.scorer.domain.GameConfig
 import com.preferans.scorer.domain.GameState
 import com.preferans.scorer.domain.Hand
 import com.preferans.scorer.domain.SeatId
+import com.preferans.scorer.ui.WithCurrentLocale
 import com.preferans.scorer.ui.localizedDisplayName
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,6 +65,7 @@ fun PlayerDetailsSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
+      WithCurrentLocale {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -141,7 +144,7 @@ fun PlayerDetailsSheet(
 
             // Hand history filtered to this player
             Text(
-                stringResource(R.string.hands_involving_fmt, playerHands.size),
+                pluralStringResource(R.plurals.hands_involving, playerHands.size, playerHands.size),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -160,6 +163,7 @@ fun PlayerDetailsSheet(
                 }
             }
         }
+      }
     }
 }
 

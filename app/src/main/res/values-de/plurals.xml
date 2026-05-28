@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Anzahl der Hände mit Beteiligung dieses Spielers. -->
+    <plurals name="hands_involving">
+        <item quantity="one">%1$d Hand mit diesem Spieler</item>
+        <item quantity="other">%1$d Hände mit diesem Spieler</item>
+    </plurals>
+
+</resources>

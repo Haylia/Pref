@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Заголовок для списка раздач с участием игрока.
+         one: 1 раздача, few: 2-4 раздачи, many: 5+ / 11-14 раздач. -->
+    <plurals name="hands_involving">
+        <item quantity="one">%1$d раздача с участием игрока</item>
+        <item quantity="few">%1$d раздачи с участием игрока</item>
+        <item quantity="many">%1$d раздач с участием игрока</item>
+        <item quantity="other">%1$d раздачи с участием игрока</item>
+    </plurals>
+
+</resources>

@@ -32,6 +32,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -92,9 +93,13 @@ fun NewHandScreen(
     }
     var declarerTricks by remember(handKey) { mutableIntStateOf(6) }
     var talonBonus by remember(handKey) { mutableIntStateOf(0) }
+    var dealerStandsInFor by remember(handKey) { mutableStateOf<SeatId?>(null) }
+    // 4-player raspasovka tracks all 4 seats including the dealer (who plays the
+    // widow's two tricks). 3-player only tracks the 3 active seats.
+    val raspasovkaSeats = if (game.config.playerCount == 4) game.config.seats else activeSeats
     val raspasovkaTricks = remember(handKey) {
         mutableStateMapOf<SeatId, Int>().apply {
-            activeSeats.forEach { put(it, 0) }
+            game.config.seats.forEach { put(it, 0) }
         }
     }
 
@@ -129,6 +134,20 @@ fun NewHandScreen(
                         onClick = { isRaspasovka = true },
                         label = { Text(stringResource(R.string.hand_all_passed)) },
                     )
+                }
+            }
+
+            // Half-whist is only valid for 6- and 7-level suit/NT bids. If the
+            // user picked half-whist and then changed the level or switched to
+            // misère, clear the stale selection so it can't submit invalid scoring.
+            LaunchedEffect(level, isMisere, isRaspasovka) {
+                if (isRaspasovka || isMisere || level !in 6..7) {
+                    val toReset = whistChoice.entries
+                        .filter { it.value == com.preferans.scorer.domain.WhistChoice.HALF_WHIST }
+                        .map { it.key }
+                    toReset.forEach {
+                        whistChoice[it] = com.preferans.scorer.domain.WhistChoice.PASS
+                    }
                 }
             }
 
@@ -250,9 +269,14 @@ fun NewHandScreen(
                                             onClick = {
                                                 whistChoice[opp] = choiceValue
                                                 if (isHalf) {
+                                                    // Half-whist requires the other opp to PASS.
                                                     opponents.filter { it != opp }.forEach { other ->
                                                         whistChoice[other] = com.preferans.scorer.domain.WhistChoice.PASS
                                                     }
+                                                    // Half-whist and dealer-stand-in are mutually exclusive:
+                                                    // half-whist ends the hand without play, dealer-stand-in
+                                                    // means the dealer plays a hand. Clear the other.
+                                                    dealerStandsInFor = null
                                                 }
                                             },
                                             enabled = !isHalf || halfWhistAllowed,
@@ -269,6 +293,57 @@ fun NewHandScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                        }
+                    }
+                }
+
+                // 4-player only: dealer can opt to whist for one opponent.
+                if (game.config.playerCount == 4 && !isMisere) {
+                    SectionCard(title = stringResource(R.string.section_dealer_whists)) {
+                        Text(
+                            stringResource(R.string.dealer_whists_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        val opps = activeSeats.filter { it != declarerSeat }
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            FilterChip(
+                                selected = dealerStandsInFor == null,
+                                onClick = { dealerStandsInFor = null },
+                                label = { Text(stringResource(R.string.dealer_whists_none)) },
+                            )
+                            opps.forEach { opp ->
+                                FilterChip(
+                                    selected = dealerStandsInFor == opp,
+                                    onClick = {
+                                        dealerStandsInFor = opp
+                                        // Dealer stepping in means a hand is played:
+                                        // disable auto-win, mark the replaced opp as
+                                        // whisting (the dealer plays as them).
+                                        autoWin = false
+                                        whistChoice[opp] = com.preferans.scorer.domain.WhistChoice.WHIST
+                                        // Clear any half-whist selections — they're
+                                        // mutually exclusive with a played dealer hand.
+                                        opps.filter { it != opp }.forEach { other ->
+                                            if (whistChoice[other] ==
+                                                com.preferans.scorer.domain.WhistChoice.HALF_WHIST
+                                            ) {
+                                                whistChoice[other] =
+                                                    com.preferans.scorer.domain.WhistChoice.PASS
+                                            }
+                                        }
+                                    },
+                                    label = {
+                                        Text(
+                                            stringResource(
+                                                R.string.dealer_takes_fmt,
+                                                game.config.nameOf(opp),
+                                            )
+                                        )
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -336,10 +411,22 @@ fun NewHandScreen(
                 }
             } else {
                 SectionCard(title = stringResource(R.string.section_tricks_raspasovka)) {
-                    activeSeats.forEach { s ->
+                    // In 4-player, include the dealer too — they play the widow's
+                    // two tricks. Their stepper is bounded to 0..2.
+                    raspasovkaSeats.forEach { s ->
+                        val isDealer = game.config.playerCount == 4 && s == game.nextDealerSeat
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(game.config.nameOf(s), modifier = Modifier.width(180.dp))
-                            NumberStepper(value = raspasovkaTricks[s] ?: 0, range = 0..10) {
+                            Text(
+                                if (isDealer)
+                                    "${game.config.nameOf(s)} ${stringResource(R.string.dealer_label)}"
+                                else
+                                    game.config.nameOf(s),
+                                modifier = Modifier.width(180.dp),
+                            )
+                            NumberStepper(
+                                value = raspasovkaTricks[s] ?: 0,
+                                range = if (isDealer) 0..2 else 0..10,
+                            ) {
                                 raspasovkaTricks[s] = it
                             }
                         }
@@ -428,6 +515,7 @@ fun NewHandScreen(
                             declarerTricks = effectiveDeclarerTricks,
                             opponents = opponents,
                             talonWhistBonus = if (game.config.playerCount == 4) talonBonus else 0,
+                            dealerStandsInFor = if (game.config.playerCount == 4) dealerStandsInFor else null,
                         )
                     }
                     vm.recordHand(hand)
