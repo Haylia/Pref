@@ -2,6 +2,8 @@ package com.preferans.scorer.ui.setup
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -43,15 +45,21 @@ import com.preferans.scorer.R
 import com.preferans.scorer.domain.GameConfig
 import com.preferans.scorer.domain.Player
 import com.preferans.scorer.domain.Variant
+import com.preferans.scorer.domain.WhistScoringRule
+import com.preferans.scorer.domain.WhistSharing
+import com.preferans.scorer.domain.WhistTrickPooling
 import com.preferans.scorer.ui.localizedDescription
 import com.preferans.scorer.ui.localizedName
 import com.preferans.scorer.ui.theme.LanguageToggleButton
 import com.preferans.scorer.ui.theme.ThemeToggleButton
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SetupScreen(onStart: (GameConfig, firstDealerSeat: Int) -> Unit) {
     var variant by remember { mutableStateOf(Variant.SOCHINKA) }
+    var whistRule by remember { mutableStateOf(WhistScoringRule.TRICKS_TAKEN) }
+    var whistPooling by remember { mutableStateOf(WhistTrickPooling.POOLED) }
+    var whistSharing by remember { mutableStateOf(WhistSharing.GENTLEMANS) }
     var playerCount by remember { mutableIntStateOf(3) }
     var bulletTarget by remember { mutableIntStateOf(10) }
     val playerDefaultFmt = stringResource(R.string.player_default_fmt)
@@ -107,6 +115,72 @@ fun SetupScreen(onStart: (GameConfig, firstDealerSeat: Int) -> Unit) {
                 }
             }
 
+            SectionCard(title = stringResource(R.string.section_whist_rule)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(WhistScoringRule.TRICKS_TAKEN, WhistScoringRule.FAILURE_ONLY).forEach { rule ->
+                        FilterChip(
+                            selected = rule == whistRule,
+                            onClick = { whistRule = rule },
+                            label = {
+                                Column {
+                                    Text(rule.localizedName(), fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        rule.localizedDescription(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = FilterChipDefaults.filterChipColors(),
+                        )
+                    }
+                }
+            }
+
+            SectionCard(title = stringResource(R.string.section_whist_pooling)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(WhistTrickPooling.POOLED, WhistTrickPooling.INDIVIDUAL).forEach { pooling ->
+                        FilterChip(
+                            selected = pooling == whistPooling,
+                            onClick = { whistPooling = pooling },
+                            label = {
+                                Column {
+                                    Text(pooling.localizedName(), fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        pooling.localizedDescription(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = FilterChipDefaults.filterChipColors(),
+                        )
+                    }
+                }
+            }
+
+            SectionCard(title = stringResource(R.string.section_whist_sharing)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(WhistSharing.GENTLEMANS, WhistSharing.GREEDY).forEach { sharing ->
+                        FilterChip(
+                            selected = sharing == whistSharing,
+                            onClick = { whistSharing = sharing },
+                            label = {
+                                Column {
+                                    Text(sharing.localizedName(), fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        sharing.localizedDescription(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = FilterChipDefaults.filterChipColors(),
+                        )
+                    }
+                }
+            }
+
             SectionCard(title = stringResource(R.string.section_players)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
@@ -135,9 +209,9 @@ fun SetupScreen(onStart: (GameConfig, firstDealerSeat: Int) -> Unit) {
             }
 
             SectionCard(title = stringResource(R.string.section_bullet_target)) {
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     listOf(6, 10, 15, 20).forEach { t ->
                         FilterChip(
@@ -146,7 +220,6 @@ fun SetupScreen(onStart: (GameConfig, firstDealerSeat: Int) -> Unit) {
                             label = { Text(t.toString()) },
                         )
                     }
-                    Spacer(Modifier.width(8.dp))
                     OutlinedTextField(
                         value = bulletTarget.toString(),
                         onValueChange = {
@@ -161,7 +234,10 @@ fun SetupScreen(onStart: (GameConfig, firstDealerSeat: Int) -> Unit) {
             }
 
             SectionCard(title = stringResource(R.string.section_first_dealer)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     repeat(playerCount) { i ->
                         FilterChip(
                             selected = firstDealer == i,
@@ -183,6 +259,9 @@ fun SetupScreen(onStart: (GameConfig, firstDealerSeat: Int) -> Unit) {
                         variant = variant,
                         players = players,
                         bulletTarget = bulletTarget,
+                        whistScoringRule = whistRule,
+                        whistTrickPooling = whistPooling,
+                        whistSharing = whistSharing,
                     )
                     onStart(config, firstDealer)
                 },

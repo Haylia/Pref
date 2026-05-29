@@ -2,6 +2,8 @@ package com.preferans.scorer.ui.hand
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -11,9 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -26,7 +28,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -43,7 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.preferans.scorer.domain.Bid
 import com.preferans.scorer.domain.GameState
@@ -56,7 +56,7 @@ import com.preferans.scorer.R
 import com.preferans.scorer.ui.GameViewModel
 import com.preferans.scorer.ui.localizedName
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun NewHandScreen(
     vm: GameViewModel,
@@ -123,7 +123,10 @@ fun NewHandScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             SectionCard(title = stringResource(R.string.section_hand_type)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     FilterChip(
                         selected = !isRaspasovka,
                         onClick = { isRaspasovka = false },
@@ -160,7 +163,10 @@ fun NewHandScreen(
 
             if (!isRaspasovka) {
                 SectionCard(title = stringResource(R.string.section_declarer)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         activeSeats.forEach { s ->
                             FilterChip(
                                 selected = s == declarerSeat,
@@ -174,7 +180,10 @@ fun NewHandScreen(
                 SectionCard(title = stringResource(R.string.section_bid)) {
                     Text(stringResource(R.string.bid_level), style = MaterialTheme.typography.labelMedium)
                     Spacer(Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         listOf(6, 7, 8, 9, 10).forEach { lv ->
                             FilterChip(
                                 selected = !isMisere && level == lv,
@@ -192,7 +201,10 @@ fun NewHandScreen(
                         Spacer(Modifier.height(10.dp))
                         Text(stringResource(R.string.bid_trump), style = MaterialTheme.typography.labelMedium)
                         Spacer(Modifier.height(6.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
                             Suit.entries.forEach { s ->
                                 FilterChip(
                                     selected = suit == s,
@@ -257,7 +269,10 @@ fun NewHandScreen(
                                     game.config.nameOf(opp),
                                     style = MaterialTheme.typography.labelLarge,
                                 )
-                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
                                     listOf(
                                         com.preferans.scorer.domain.WhistChoice.PASS to R.string.whist_pass,
                                         com.preferans.scorer.domain.WhistChoice.WHIST to R.string.whist_full,
@@ -307,7 +322,10 @@ fun NewHandScreen(
                         )
                         Spacer(Modifier.height(6.dp))
                         val opps = activeSeats.filter { it != declarerSeat }
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
                             FilterChip(
                                 selected = dealerStandsInFor == null,
                                 onClick = { dealerStandsInFor = null },
@@ -350,20 +368,17 @@ fun NewHandScreen(
 
                 if (!autoWin && !isMisere && !anyHalfWhist) {
                     SectionCard(title = stringResource(R.string.section_tricks_taken)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                "${game.config.nameOf(declarerSeat)} ${stringResource(R.string.declarer_paren)}",
-                                modifier = Modifier.width(180.dp),
-                            )
-                            NumberStepper(value = declarerTricks, range = 0..10) { declarerTricks = it }
-                        }
+                        TrickRow(
+                            label = "${game.config.nameOf(declarerSeat)} ${stringResource(R.string.declarer_paren)}",
+                            value = declarerTricks,
+                            range = 0..10,
+                        ) { declarerTricks = it }
                         activeSeats.filter { it != declarerSeat }.forEach { opp ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(game.config.nameOf(opp), modifier = Modifier.width(180.dp))
-                                NumberStepper(value = tricks[opp] ?: 0, range = 0..10) {
-                                    tricks[opp] = it
-                                }
-                            }
+                            TrickRow(
+                                label = game.config.nameOf(opp),
+                                value = tricks[opp] ?: 0,
+                                range = 0..10,
+                            ) { tricks[opp] = it }
                         }
                         val sum = declarerTricks + (tricks.values.sum())
                         val color =
@@ -400,13 +415,11 @@ fun NewHandScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.height(6.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                stringResource(R.string.dealer_fmt, game.config.nameOf(game.nextDealerSeat)),
-                                modifier = Modifier.width(180.dp),
-                            )
-                            NumberStepper(value = talonBonus, range = 0..40) { talonBonus = it }
-                        }
+                        TrickRow(
+                            label = stringResource(R.string.dealer_fmt, game.config.nameOf(game.nextDealerSeat)),
+                            value = talonBonus,
+                            range = 0..40,
+                        ) { talonBonus = it }
                     }
                 }
             } else {
@@ -415,21 +428,14 @@ fun NewHandScreen(
                     // two tricks. Their stepper is bounded to 0..2.
                     raspasovkaSeats.forEach { s ->
                         val isDealer = game.config.playerCount == 4 && s == game.nextDealerSeat
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                if (isDealer)
-                                    "${game.config.nameOf(s)} ${stringResource(R.string.dealer_label)}"
-                                else
-                                    game.config.nameOf(s),
-                                modifier = Modifier.width(180.dp),
-                            )
-                            NumberStepper(
-                                value = raspasovkaTricks[s] ?: 0,
-                                range = if (isDealer) 0..2 else 0..10,
-                            ) {
-                                raspasovkaTricks[s] = it
-                            }
-                        }
+                        TrickRow(
+                            label = if (isDealer)
+                                "${game.config.nameOf(s)} ${stringResource(R.string.dealer_label)}"
+                            else
+                                game.config.nameOf(s),
+                            value = raspasovkaTricks[s] ?: 0,
+                            range = if (isDealer) 0..2 else 0..10,
+                        ) { raspasovkaTricks[s] = it }
                     }
                     val sum = raspasovkaTricks.values.sum()
                     val color =
@@ -561,29 +567,52 @@ private fun SectionCard(title: String, content: @Composable () -> Unit) {
     }
 }
 
+/**
+ * A labelled trick-count row: the name takes the remaining width (ellipsised if
+ * long) and the compact stepper sits on the right, so the +/− controls are
+ * always on-screen regardless of name length or device width.
+ */
 @Composable
-private fun NumberStepper(value: Int, range: IntRange, onChange: (Int) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
-            value = value.toString(),
-            onValueChange = { s ->
-                s.toIntOrNull()?.let { v -> if (v in range) onChange(v) }
-            },
-            modifier = Modifier.width(80.dp),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+private fun TrickRow(
+    label: String,
+    value: Int,
+    range: IntRange,
+    onChange: (Int) -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+    ) {
+        Text(
+            label,
+            modifier = Modifier.weight(1f).padding(end = 8.dp),
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
-        Spacer(Modifier.width(8.dp))
-        SmallButton("−") { if (value - 1 in range) onChange(value - 1) }
-        Spacer(Modifier.width(4.dp))
-        SmallButton("+") { if (value + 1 in range) onChange(value + 1) }
+        NumberStepper(value = value, range = range, onChange = onChange)
     }
 }
 
 @Composable
-private fun SmallButton(label: String, onClick: () -> Unit) {
+private fun NumberStepper(value: Int, range: IntRange, onChange: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        SmallButton("−", enabled = value - 1 in range) { onChange(value - 1) }
+        Text(
+            value.toString(),
+            modifier = Modifier.widthIn(min = 36.dp).padding(horizontal = 6.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+        SmallButton("+", enabled = value + 1 in range) { onChange(value + 1) }
+    }
+}
+
+@Composable
+private fun SmallButton(label: String, enabled: Boolean = true, onClick: () -> Unit) {
     androidx.compose.material3.FilledTonalButton(
         onClick = onClick,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-    ) { Text(label) }
+        enabled = enabled,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+    ) { Text(label, style = MaterialTheme.typography.titleMedium) }
 }

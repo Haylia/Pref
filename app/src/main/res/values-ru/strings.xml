@@ -19,6 +19,27 @@
     <string name="action_start_game">Начать игру</string>
     <string name="player_default_fmt">Игрок %1$d</string>
 
+    <!-- Подсчёт виста -->
+    <string name="section_whist_rule">Подсчёт виста</string>
+    <string name="whist_rule_standard">Стандартный</string>
+    <string name="whist_rule_standard_desc">Вистующие получают очки за каждую взятую взятку, даже если разыгрывающий выполнил игру.</string>
+    <string name="whist_rule_catsatcards">Catsatcards</string>
+    <string name="whist_rule_catsatcards_desc">Вистующие получают очки только при провале разыгрывающего (как на catsatcards.com).</string>
+
+    <!-- Одиночный вист -->
+    <string name="section_whist_pooling">Одиночный вист</string>
+    <string name="whist_pooling_pooled">Взятки пасующего учитываются</string>
+    <string name="whist_pooling_pooled_desc">Когда один соперник вистует, а другой пасует, взятки пасующего идут в зачёт вистующему — и в норму, и в очки.</string>
+    <string name="whist_pooling_individual">Только свои взятки</string>
+    <string name="whist_pooling_individual_desc">Одиночный вистующий оценивается только по своим взяткам.</string>
+
+    <!-- Дележ виста -->
+    <string name="section_whist_sharing">Награда за вист</string>
+    <string name="whist_sharing_gentlemans">Джентльменский</string>
+    <string name="whist_sharing_gentlemans_desc">Одиночный вистующий делит награду с помогавшим пасующим. При нечётном делении вистующему достаётся большая половина.</string>
+    <string name="whist_sharing_greedy">Жадный</string>
+    <string name="whist_sharing_greedy_desc">Одиночный вистующий забирает всю награду за вист; пасующему не достаётся ничего.</string>
+
     <!-- Варианты -->
     <string name="variant_sochinka">Сочинка</string>
     <string name="variant_sochinka_desc">Стандартный подсчёт. Базовые значения очков.</string>

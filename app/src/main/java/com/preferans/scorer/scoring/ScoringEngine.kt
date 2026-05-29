@@ -98,15 +98,63 @@ object ScoringEngine {
 
         val whisterShares = splitThreshold(threshold, whisters.size)
 
+        // Trick pooling: when exactly one opponent whists and the other passes,
+        // optionally fold the passer's tricks into the lone whister's effective
+        // total (for threshold check and TRICKS_TAKEN credit). No effect when
+        // both whist.
+        val pooled = config.whistTrickPooling == com.preferans.scorer.domain.WhistTrickPooling.POOLED &&
+            whisters.size == 1
+        val pooledPasserTricks = if (pooled) {
+            hand.opponents.filter { !it.isFullWhist }.sumOf { it.tricks }
+        } else 0
+        fun effectiveTricks(w: com.preferans.scorer.domain.WhisterRecord): Int =
+            w.tricks + pooledPasserTricks
+
+        // Gentleman's sharing: in the lone-whister case the whister's *reward*
+        // (failure bonus + made-contract tricks credit) is split with the passer,
+        // whister keeping the larger half on an odd total.
+        val loneWhister = whisters.singleOrNull()
+        val passerSeat = if (loneWhister != null) {
+            hand.opponents.firstOrNull { !it.isFullWhist }?.seat
+        } else null
+        val shareWithPasser = config.whistSharing == com.preferans.scorer.domain.WhistSharing.GENTLEMANS &&
+            loneWhister != null && passerSeat != null
+
+        fun addWhisterReward(whisterSeat: SeatId, amount: Int) {
+            if (amount <= 0) return
+            if (shareWithPasser) {
+                val whisterShare = (amount + 1) / 2 // ceil — whister keeps more
+                val passerShare = amount / 2        // floor
+                deltas += ScoreDelta(seat = whisterSeat, whistAgainst = mapOf(hand.declarerSeat to whisterShare))
+                if (passerShare > 0) {
+                    deltas += ScoreDelta(seat = passerSeat!!, whistAgainst = mapOf(hand.declarerSeat to passerShare))
+                }
+            } else {
+                deltas += ScoreDelta(seat = whisterSeat, whistAgainst = mapOf(hand.declarerSeat to amount))
+            }
+        }
+
         if (d >= level) {
             // Declarer made the contract.
             deltas += ScoreDelta(seat = hand.declarerSeat, bullet = v)
+
+            // Standard rule (per-game): a whister still scores V × (their tricks)
+            // whist against the declarer for defending. Catsatcards (FAILURE_ONLY)
+            // awards nothing here. Pooling credits the lone whister for the
+            // passer's tricks too.
+            if (config.whistScoringRule == com.preferans.scorer.domain.WhistScoringRule.TRICKS_TAKEN) {
+                for (w in whisters) {
+                    addWhisterReward(w.seat, v * effectiveTricks(w))
+                }
+            }
         } else {
             // Declarer failed — short by (level - d) tricks.
             val short = level - d
             deltas += ScoreDelta(seat = hand.declarerSeat, mountain = v * short)
 
             // Mirror whist: every opponent (whisted or not) records V × short.
+            // This is NOT subject to gentleman's sharing — both opponents already
+            // record it individually.
             for (opp in hand.opponents) {
                 deltas += ScoreDelta(
                     seat = opp.seat,
@@ -114,24 +162,21 @@ object ScoringEngine {
                 )
             }
 
-            // Whist bonus: a flat V is split among whisters. V is always even
-            // (2/4/6/8/10) so V / num_whisters is integer for 1 or 2 whisters.
+            // Whist bonus: a flat V split among whisters (the whister's reward).
             if (whisters.isNotEmpty()) {
                 val per = v / whisters.size
                 for (w in whisters) {
-                    deltas += ScoreDelta(
-                        seat = w.seat,
-                        whistAgainst = mapOf(hand.declarerSeat to per),
-                    )
+                    addWhisterReward(w.seat, per)
                 }
             }
         }
 
         // Failed-whist penalty: applies in both made and failed cases. Each
-        // whister who fell short of their individual share of the threshold
-        // adds V × gap mountain to themselves.
+        // whister who fell short of their share of the threshold adds V × gap
+        // mountain to themselves. Pooling counts the passer's tricks toward the
+        // lone whister's total, so a well-defended hand avoids the penalty.
         whisters.forEachIndexed { i, w ->
-            val gap = (whisterShares[i] - w.tricks).coerceAtLeast(0)
+            val gap = (whisterShares[i] - effectiveTricks(w)).coerceAtLeast(0)
             if (gap > 0) {
                 deltas += ScoreDelta(seat = w.seat, mountain = v * gap)
             }

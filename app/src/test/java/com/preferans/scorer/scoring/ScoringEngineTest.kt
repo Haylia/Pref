@@ -9,6 +9,9 @@ import com.preferans.scorer.domain.SeatId
 import com.preferans.scorer.domain.Suit
 import com.preferans.scorer.domain.Variant
 import com.preferans.scorer.domain.WhistChoice
+import com.preferans.scorer.domain.WhistScoringRule
+import com.preferans.scorer.domain.WhistSharing
+import com.preferans.scorer.domain.WhistTrickPooling
 import com.preferans.scorer.domain.WhisterRecord
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -273,6 +276,277 @@ class ScoringEngineTest {
         val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
         assertEquals(2, result.scores[0]?.bullet)
         assertEquals(2, result.scores[1]?.whistAgainst?.get(0))
+    }
+
+    // ── Whist scoring rule: TRICKS_TAKEN on a made contract ─────────────────
+
+    @Test fun madeContract_failureOnlyRule_whisterScoresNothing() {
+        // 8♣ made: declarer 8, whister took 2 (the user's scenario). Under the
+        // default FAILURE_ONLY (catsatcards) rule, the whister scores nothing.
+        val cfg = threePlayerConfig() // default FAILURE_ONLY
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(8, Suit.CLUBS),
+            declarerTricks = 8,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 0),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(6, result.scores[0]?.bullet) // V[8] bullet for declarer
+        assertEquals(null, result.scores[1]?.whistAgainst?.get(0)) // whister: nothing
+        assertEquals(0, result.scores[1]?.mountain) // took 2 ≥ threshold 1 → no penalty
+    }
+
+    @Test fun madeContract_tricksTakenRule_whisterScoresPerTrick() {
+        // Same 8♣ made, whister took 2 — but with TRICKS_TAKEN the whister
+        // records V[8] × 2 = 12 whist against the declarer.
+        val cfg = threePlayerConfig().copy(whistScoringRule = WhistScoringRule.TRICKS_TAKEN)
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(8, Suit.CLUBS),
+            declarerTricks = 8,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 0),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(6, result.scores[0]?.bullet)
+        assertEquals(12, result.scores[1]?.whistAgainst?.get(0)) // V*2
+        // Passer (didn't whist) scores nothing even under TRICKS_TAKEN.
+        assertEquals(null, result.scores[2]?.whistAgainst?.get(0))
+    }
+
+    @Test fun madeContract_tricksTakenRule_failureCaseUnchanged() {
+        // TRICKS_TAKEN must NOT change the failure case — still mirror + bonus.
+        val cfg = threePlayerConfig().copy(whistScoringRule = WhistScoringRule.TRICKS_TAKEN)
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(6, Suit.SPADES),
+            declarerTricks = 5,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 3),
+                WhisterRecord(seat = 2, choice = WhistChoice.WHIST, tricks = 2),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        // Identical to the FAILURE_ONLY failure result: declarer +2 mountain,
+        // each whister +3 (mirror 2 + bonus 1).
+        assertEquals(2, result.scores[0]?.mountain)
+        assertEquals(3, result.scores[1]?.whistAgainst?.get(0))
+        assertEquals(3, result.scores[2]?.whistAgainst?.get(0))
+    }
+
+    // ── Whist trick pooling (lone whister + passer) ─────────────────────────
+
+    @Test fun pooling_loneWhister_made_creditsPasserTricks() {
+        // 6♠ made (declarer 6). Seat 1 whists and took 1, seat 2 passes and took 3.
+        // POOLED + TRICKS_TAKEN: whister credited for all 4 defensive tricks
+        // → V[6] × 4 = 8 whist, and no failed-whist penalty (4 ≥ threshold 4).
+        val cfg = threePlayerConfig().copy(
+            whistScoringRule = WhistScoringRule.TRICKS_TAKEN,
+            whistTrickPooling = WhistTrickPooling.POOLED,
+        )
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(6, Suit.SPADES),
+            declarerTricks = 6,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 1),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 3),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(2, result.scores[0]?.bullet)
+        assertEquals(8, result.scores[1]?.whistAgainst?.get(0)) // V*4
+        assertEquals(0, result.scores[1]?.mountain) // pooled total met threshold
+        assertEquals(null, result.scores[2]?.whistAgainst?.get(0)) // passer scores nothing
+    }
+
+    @Test fun pooling_off_loneWhister_made_individualTricksAndPenalty() {
+        // Same hand, INDIVIDUAL: whister credited only for their own 1 trick
+        // → V*1 = 2 whist, AND penalised for falling short of threshold 4
+        // → V × (4-1) = 6 mountain.
+        val cfg = threePlayerConfig().copy(
+            whistScoringRule = WhistScoringRule.TRICKS_TAKEN,
+            whistTrickPooling = WhistTrickPooling.INDIVIDUAL,
+        )
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(6, Suit.SPADES),
+            declarerTricks = 6,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 1),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 3),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(2, result.scores[1]?.whistAgainst?.get(0)) // V*1
+        assertEquals(6, result.scores[1]?.mountain) // V*(4-1)
+    }
+
+    @Test fun pooling_noEffect_whenBothWhist() {
+        // 6♠ made +1 (declarer 7). Both whist: shares [2,2]. Seat 1 took 2 (ok),
+        // seat 2 took 1 (gap 1). With two whisters there's no passer, so POOLED
+        // changes nothing: seat 2 still penalised V × 1 = 2; seat 1 not.
+        val cfg = threePlayerConfig().copy(whistTrickPooling = WhistTrickPooling.POOLED)
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(6, Suit.SPADES),
+            declarerTricks = 7,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.WHIST, tricks = 1),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(0, result.scores[1]?.mountain)
+        assertEquals(2, result.scores[2]?.mountain)
+    }
+
+    // ── Whist reward sharing (greedy vs gentleman's) ────────────────────────
+
+    @Test fun gentlemans_made_sharesRewardEvenly() {
+        // 8♣ made, lone whister took 2 (individual pooling). Reward = V[8]×2 = 12.
+        // Gentleman's splits it: whister 6, passer 6.
+        val cfg = threePlayerConfig().copy(
+            whistScoringRule = WhistScoringRule.TRICKS_TAKEN,
+            whistTrickPooling = WhistTrickPooling.INDIVIDUAL,
+            whistSharing = WhistSharing.GENTLEMANS,
+        )
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(8, Suit.CLUBS),
+            declarerTricks = 8,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 0),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(6, result.scores[1]?.whistAgainst?.get(0)) // whister half
+        assertEquals(6, result.scores[2]?.whistAgainst?.get(0)) // passer half
+        assertEquals(0, result.scores[1]?.mountain)
+    }
+
+    @Test fun gentlemans_made_pooledRewardShared() {
+        // 6♠ made, whister took 1, passer took 3, POOLED + gentleman's.
+        // Pooled reward = V[6] × 4 = 8 → split 4/4.
+        val cfg = threePlayerConfig().copy(
+            whistScoringRule = WhistScoringRule.TRICKS_TAKEN,
+            whistTrickPooling = WhistTrickPooling.POOLED,
+            whistSharing = WhistSharing.GENTLEMANS,
+        )
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(6, Suit.SPADES),
+            declarerTricks = 6,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 1),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 3),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(4, result.scores[1]?.whistAgainst?.get(0))
+        assertEquals(4, result.scores[2]?.whistAgainst?.get(0))
+    }
+
+    @Test fun gentlemans_failed_sharesBonusButNotMirror() {
+        // 6♠ failed by 1, lone whister took 3, passer took 2. Gentleman's.
+        // Mirror (V×1=2) goes to EACH opponent individually (not shared).
+        // Bonus (V=2) is the whister's reward → split 1/1.
+        val cfg = threePlayerConfig().copy(whistSharing = WhistSharing.GENTLEMANS)
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(6, Suit.SPADES),
+            declarerTricks = 5,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 3),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 2),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(2, result.scores[0]?.mountain) // declarer V×short
+        // Whister: mirror 2 + bonus-share 1 = 3. Passer: mirror 2 + bonus-share 1 = 3.
+        assertEquals(3, result.scores[1]?.whistAgainst?.get(0))
+        assertEquals(3, result.scores[2]?.whistAgainst?.get(0))
+        // Whister still personally penalised for the threshold gap (share 4, took 3).
+        assertEquals(2, result.scores[1]?.mountain)
+        assertEquals(0, result.scores[2]?.mountain) // passer not a whister → no penalty
+    }
+
+    @Test fun greedy_made_whisterKeepsWholeReward() {
+        // Same as gentlemans_made_sharesRewardEvenly but GREEDY: whister keeps 12.
+        val cfg = threePlayerConfig().copy(
+            whistScoringRule = WhistScoringRule.TRICKS_TAKEN,
+            whistTrickPooling = WhistTrickPooling.INDIVIDUAL,
+            whistSharing = WhistSharing.GREEDY,
+        )
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(8, Suit.CLUBS),
+            declarerTricks = 8,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 2),
+                WhisterRecord(seat = 2, choice = WhistChoice.PASS, tricks = 0),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(12, result.scores[1]?.whistAgainst?.get(0))
+        assertEquals(null, result.scores[2]?.whistAgainst?.get(0))
+    }
+
+    @Test fun gentlemans_noEffect_whenBothWhist() {
+        // Both whist → no passer → sharing is a no-op. 6♠ failed by 1,
+        // each whister gets mirror 2 + bonus (V/2=1) = 3, same as greedy.
+        val cfg = threePlayerConfig().copy(whistSharing = WhistSharing.GENTLEMANS)
+        val hand = Hand.Played(
+            handNumber = 1,
+            dealerSeat = 0,
+            declarerSeat = 0,
+            bid = Bid.SuitBid(6, Suit.SPADES),
+            declarerTricks = 5,
+            opponents = listOf(
+                WhisterRecord(seat = 1, choice = WhistChoice.WHIST, tricks = 3),
+                WhisterRecord(seat = 2, choice = WhistChoice.WHIST, tricks = 2),
+            ),
+        )
+        val result = ScoringEngine.applyHand(emptySheet(cfg), hand, cfg)
+
+        assertEquals(3, result.scores[1]?.whistAgainst?.get(0))
+        assertEquals(3, result.scores[2]?.whistAgainst?.get(0))
     }
 
     // ── Misère ──────────────────────────────────────────────────────────────

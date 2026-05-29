@@ -19,6 +19,27 @@
     <string name="action_start_game">Spiel starten</string>
     <string name="player_default_fmt">Spieler %1$d</string>
 
+    <!-- Wist-Wertung -->
+    <string name="section_whist_rule">Wist-Wertung</string>
+    <string name="whist_rule_standard">Standard</string>
+    <string name="whist_rule_standard_desc">Wister erhalten Punkte für jeden erzielten Stich, auch wenn der Ansager den Kontrakt erfüllt.</string>
+    <string name="whist_rule_catsatcards">Catsatcards</string>
+    <string name="whist_rule_catsatcards_desc">Wister erhalten nur Punkte, wenn der Ansager scheitert (wie auf catsatcards.com).</string>
+
+    <!-- Einzel-Wist -->
+    <string name="section_whist_pooling">Einzelner Wister</string>
+    <string name="whist_pooling_pooled">Stiche des Passers zählen</string>
+    <string name="whist_pooling_pooled_desc">Wenn ein Gegner wistet und der andere passt, zählen die Stiche des Passers für die Schwelle und Wertung des Wisters.</string>
+    <string name="whist_pooling_individual">Nur eigene Stiche</string>
+    <string name="whist_pooling_individual_desc">Ein einzelner Wister wird nur nach seinen eigenen Stichen bewertet.</string>
+
+    <!-- Wist-Belohnung teilen -->
+    <string name="section_whist_sharing">Wist-Belohnung</string>
+    <string name="whist_sharing_gentlemans">Gentleman</string>
+    <string name="whist_sharing_gentlemans_desc">Ein einzelner Wister teilt die Belohnung mit dem helfenden Passer. Bei ungerader Teilung behält der Wister die größere Hälfte.</string>
+    <string name="whist_sharing_greedy">Gierig</string>
+    <string name="whist_sharing_greedy_desc">Ein einzelner Wister behält die gesamte Wist-Belohnung; der Passer bekommt nichts.</string>
+
     <!-- Varianten -->
     <string name="variant_sochinka">Sotschinka</string>
     <string name="variant_sochinka_desc">Standardwertung. Grundpunktwerte.</string>

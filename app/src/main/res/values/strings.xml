@@ -19,6 +19,27 @@
     <string name="action_start_game">Start game</string>
     <string name="player_default_fmt">Player %1$d</string>
 
+    <!-- Whist scoring rule -->
+    <string name="section_whist_rule">Whist scoring</string>
+    <string name="whist_rule_standard">Standard</string>
+    <string name="whist_rule_standard_desc">Whisters score for every trick they take, even when the declarer makes the contract.</string>
+    <string name="whist_rule_catsatcards">Catsatcards</string>
+    <string name="whist_rule_catsatcards_desc">Whisters score only when the declarer fails (as on catsatcards.com).</string>
+
+    <!-- Whist trick pooling -->
+    <string name="section_whist_pooling">Lone whister</string>
+    <string name="whist_pooling_pooled">Passer\'s tricks count</string>
+    <string name="whist_pooling_pooled_desc">When one opponent whists and the other passes, the passer\'s tricks count toward the whister\'s threshold and score.</string>
+    <string name="whist_pooling_individual">Own tricks only</string>
+    <string name="whist_pooling_individual_desc">A lone whister is judged and scored on their own tricks only.</string>
+
+    <!-- Whist reward sharing -->
+    <string name="section_whist_sharing">Whist reward</string>
+    <string name="whist_sharing_gentlemans">Gentleman\'s</string>
+    <string name="whist_sharing_gentlemans_desc">A lone whister shares the whist reward with the passer who helped. On an odd split the whister keeps the larger half.</string>
+    <string name="whist_sharing_greedy">Greedy</string>
+    <string name="whist_sharing_greedy_desc">A lone whister keeps the entire whist reward; the passer gets none of it.</string>
+
     <!-- Variants -->
     <string name="variant_sochinka">Sochinka</string>
     <string name="variant_sochinka_desc">Standard scoring. Base point values.</string>

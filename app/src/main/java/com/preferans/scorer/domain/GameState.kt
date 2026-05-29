@@ -8,6 +8,23 @@ data class GameConfig(
     val players: List<Player>,
     /** Bullet target — game ends when all active seats reach this. */
     val bulletTarget: Int = 10,
+    /**
+     * How whisters score on a made contract. Defaults to [WhistScoringRule.FAILURE_ONLY]
+     * so older saved games (which lack this field) keep their original behaviour.
+     */
+    val whistScoringRule: WhistScoringRule = WhistScoringRule.FAILURE_ONLY,
+    /**
+     * Whether a lone whister gets the passer's tricks toward their threshold and
+     * score. Defaults to [WhistTrickPooling.INDIVIDUAL] so older saved games keep
+     * their original behaviour.
+     */
+    val whistTrickPooling: WhistTrickPooling = WhistTrickPooling.INDIVIDUAL,
+    /**
+     * How a lone whister's reward is split with the passer. Defaults to
+     * [WhistSharing.GREEDY] (whister keeps all) so older saved games keep their
+     * original behaviour.
+     */
+    val whistSharing: WhistSharing = WhistSharing.GREEDY,
 ) {
     val seats: List<SeatId> get() = players.map { it.seat }
     val playerCount: Int get() = players.size

@@ -7,6 +7,9 @@ import com.preferans.scorer.domain.Bid
 import com.preferans.scorer.domain.Suit
 import com.preferans.scorer.domain.Variant
 import com.preferans.scorer.domain.WhistChoice
+import com.preferans.scorer.domain.WhistScoringRule
+import com.preferans.scorer.domain.WhistSharing
+import com.preferans.scorer.domain.WhistTrickPooling
 
 @Composable
 fun Suit.localizedName(): String = when (this) {
@@ -42,4 +45,40 @@ fun WhistChoice.localizedLabel(): String = when (this) {
     WhistChoice.PASS -> stringResource(R.string.whist_pass)
     WhistChoice.WHIST -> stringResource(R.string.whist_full)
     WhistChoice.HALF_WHIST -> stringResource(R.string.whist_half)
+}
+
+@Composable
+fun WhistScoringRule.localizedName(): String = when (this) {
+    WhistScoringRule.TRICKS_TAKEN -> stringResource(R.string.whist_rule_standard)
+    WhistScoringRule.FAILURE_ONLY -> stringResource(R.string.whist_rule_catsatcards)
+}
+
+@Composable
+fun WhistScoringRule.localizedDescription(): String = when (this) {
+    WhistScoringRule.TRICKS_TAKEN -> stringResource(R.string.whist_rule_standard_desc)
+    WhistScoringRule.FAILURE_ONLY -> stringResource(R.string.whist_rule_catsatcards_desc)
+}
+
+@Composable
+fun WhistTrickPooling.localizedName(): String = when (this) {
+    WhistTrickPooling.POOLED -> stringResource(R.string.whist_pooling_pooled)
+    WhistTrickPooling.INDIVIDUAL -> stringResource(R.string.whist_pooling_individual)
+}
+
+@Composable
+fun WhistTrickPooling.localizedDescription(): String = when (this) {
+    WhistTrickPooling.POOLED -> stringResource(R.string.whist_pooling_pooled_desc)
+    WhistTrickPooling.INDIVIDUAL -> stringResource(R.string.whist_pooling_individual_desc)
+}
+
+@Composable
+fun WhistSharing.localizedName(): String = when (this) {
+    WhistSharing.GENTLEMANS -> stringResource(R.string.whist_sharing_gentlemans)
+    WhistSharing.GREEDY -> stringResource(R.string.whist_sharing_greedy)
+}
+
+@Composable
+fun WhistSharing.localizedDescription(): String = when (this) {
+    WhistSharing.GENTLEMANS -> stringResource(R.string.whist_sharing_gentlemans_desc)
+    WhistSharing.GREEDY -> stringResource(R.string.whist_sharing_greedy_desc)
 }
