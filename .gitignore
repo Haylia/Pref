@@ -1,11 +1,75 @@
-*.iml
-.gradle/
+# ─────────────────────────────────────────────────────────────
+# Secrets — keep these OUT of a public repo
+# ─────────────────────────────────────────────────────────────
+# Local SDK path (also leaks your username/machine layout)
 local.properties
-.idea/
-.DS_Store
+
+# Signing keystores and credentials
+*.jks
+*.keystore
+keystore.properties
+key.properties
+signing.properties
+
+# Service-account / API keys / certs
+google-services.json
+secrets.properties
+*.p12
+*.pem
+.env
+.env.*
+
+# ─────────────────────────────────────────────────────────────
+# Build output
+# ─────────────────────────────────────────────────────────────
 build/
 captures/
-.externalNativeBuild/
+out/
+release/
+bin/
+gen/
+.gradle/
+.kotlin/
 .cxx/
+.externalNativeBuild/
+
+# Packaged artifacts
 *.aab
-*.keystore
+*.ap_
+*.aar
+*.dex
+*.class
+
+# ─────────────────────────────────────────────────────────────
+# IDE — Android Studio / IntelliJ
+# ─────────────────────────────────────────────────────────────
+*.iml
+.idea/
+.fleet/
+.vscode/
+
+# ─────────────────────────────────────────────────────────────
+# Logs, profiling and crash dumps
+# ─────────────────────────────────────────────────────────────
+*.log
+*.hprof
+lint-results*.html
+lint-results*.xml
+
+# ─────────────────────────────────────────────────────────────
+# OS cruft
+# ─────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ─────────────────────────────────────────────────────────────
+# Keep the Gradle wrapper so `./gradlew` works for anyone cloning.
+# (gradle/wrapper/gradle-wrapper.jar, gradlew, gradlew.bat, and
+#  gradle/libs.versions.toml are intentionally NOT ignored.)
+# ─────────────────────────────────────────────────────────────
